@@ -14,7 +14,7 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.1.11"
+_version = "0.1.12"
 def get_version():
     return _version
 # end_def
@@ -128,10 +128,10 @@ class tazManager():
     _default_fq_shapefile_fn = _default_base + _default_shapefile_fn
     _taz_table = []
     
-    def __init__(my_shapefile_fn=None):
+    def __init__(self, my_shapefile_fn=None):
         # print('Creating the tazManager object.')
         if my_shapefile_fn == None:
-            my_shapefile_fn = _default_fq_shapefile_fn
+            my_shapefile_fn = self._default_fq_shapefile_fn
         #
         # Derive name of .dbf file 
         my_dbffile_fn = my_shapefile_fn.replace('.shp', '.dbf')
@@ -147,67 +147,68 @@ class tazManager():
             new['mpo'] = record['mpo']
             new['in_brmpo'] = int(record['in_brmpo'])
             new['subregion'] = record['subregion']
+            new['sector'] = record['sector']
             self._taz_table.append(new)
         # end_for
         dbf_table.unload()
-        print('Number of recrods read = ' + str(len(self._taz_table)))
+        print('Number of records read = ' + str(len(self._taz_table)))
         return self._instance
     # end_def __init__()
     
     # For debugging during development:
-    def _get_tt_item(index):
-        return _taz_table[index]
+    def _get_tt_item(self, index):
+        return self._taz_table[index]
         
-    def mpo_to_tazes(mpo):
-        retval = pydash.collections.filter_(_taz_table, lambda x: x['mpo'] == mpo)
+    def mpo_to_tazes(self, mpo):
+        retval = pydash.collections.filter_(self._taz_table, lambda x: x['mpo'] == mpo)
         return retval
 
-    def brmpo_tazes():
-        retval = pydash.collections.filter_(_taz_table, lambda x: x['in_brmpo'] == 1)
+    def brmpo_tazes(self):
+        retval = pydash.collections.filter_(self._taz_table, lambda x: x['in_brmpo'] == 1)
         return retval
 
-    def brmpo_town_to_tazes(mpo_town):
-        retval = pydash.collections.filter_(_taz_table, lambda x: x['in_brmpo'] == 1 and x['town'] == mpo_town)
+    def brmpo_town_to_tazes(self, mpo_town):
+        retval = pydash.collections.filter_(self._taz_table, lambda x: x['in_brmpo'] == 1 and x['town'] == mpo_town)
         return retval
 
-    def brmpo_subregion_to_tazes(mpo_subregion):
+    def brmpo_subregion_to_tazes(self, mpo_subregion):
         # We have to be careful as some towns are in two subregions,
         # and for these the 'subregion' field of the table contains
         # an entry of the form 'SUBREGION_1/SUBREGION_2'.
         retval = []
         if subregion == 'ICC':
-            retval = pydash.collections.filter_(_taz_table, 
+            retval = pydash.collections.filter_(self._taz_table, 
                                                 lambda x: x['subregion'].find('ICC') != -1)
         elif subregion == 'TRIC':
-            retval = pydash.collections.filter_(_taz_table, 
+            retval = pydash.collections.filter_(self._taz_table, 
                                                 lambda x: x['subregion'].find('TRIC') != -1)
         elif subregion == 'SWAP':
-            retval = pydash.collections.filter_(_taz_table,
+            retval = pydash.collections.filter_(self._taz_table,
                                                 lambda x: x['subregion'].find('SWAP') != -1)
         else:
-            retval = pydash.collections.filter_(_taz_table, lambda x: x['subregion'] == mpo_subregion)
+            retval = pydash.collections.filter_(self._taz_table, lambda x: x['subregion'] == mpo_subregion)
         # end_if
         return retval
     # end_def mpo_subregion_to_tazes()
     
-    def sector_to_tazes(sector):
-        retval = pydash.collections.filter_(_taz_table, lambda x: x['sector'] == sector)
+    def sector_to_tazes(self, sector):
+        retval = pydash.collections.filter_(self._taz_table, lambda x: x['sector'] == sector)
         return retval
     
     # Note: Returns TAZes in town _regardless_ of state.
-    def town_to_tazes(town):
-        retval = pydash.collections.filter_(_taz_table, lambda x: x['town'] == town)
+    def town_to_tazes(self, town):
+        retval = pydash.collections.filter_(self._taz_table, lambda x: x['town'] == town)
         return retval
 
-    def town_state_to_tazes(town, state):
-        retval = pydash.collections.filter_(_taz_table, lambda x: x['state'] == state and x['town'] == town)
+    def town_state_to_tazes(self, town, state):
+        retval = pydash.collections.filter_(self._taz_table, lambda x: x['state'] == state and x['town'] == town)
         return retval
 
-    def state_to_tazes(state):
-        retval = pydash.collections.filter_(_taz_table, lambda x: x['state'] == state)
+    def state_to_tazes(self, state):
+        retval = pydash.collections.filter_(self._taz_table, lambda x: x['state'] == state)
         return retval
         
-    def taz_ids(taz_record_list):
+    def taz_ids(self, taz_record_list):
         retval = []
         for taz in taz_record_list:
             retval.append(taz['id'])
