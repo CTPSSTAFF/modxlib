@@ -14,7 +14,7 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.1.10"
+_version = "0.1.11"
 def get_version():
     return _version
 # end_def
@@ -86,6 +86,11 @@ def load_tts_as_np_arrays(tts, time_periods=None, mode_list=None):
 #              7. mpo - abbreviation of MPO name: 
 #              8. in_brmpo - 1 (yes) or 0 (no)
 #              9. subregion - abbreviation of Boston Region MPO subregion or NULL
+#             10. sector - 'analysis sector' as defined by Bill Kuttner.
+#                          Either 'Northeast', 'North', 'Northwest', 'West', 'Southwest',
+#                          'South', 'Southeast', 'Central' or ''; the empty string ('')
+#                          indicates that the TAZ is outsize of the 164 municipalities
+#                          comprising what was once known as the 'CTPS Model Region'.
 #
 #         An object of class tazManager is instantiated by passing in the fully-qualified path
 #         to a Shapefile to the class constructor. Hence, it is possible to have more than one
@@ -101,13 +106,15 @@ def load_tts_as_np_arrays(tts, time_periods=None, mode_list=None):
 #      return a list of the records for the TAZes in it
 #   5. brmpo_subregion_to_tazes(subregion) - Given the name (i.e., abbreviation) of a Boston Region MPO subregion,
 #      return a list of the records for the TAZes in it
-#   6. town_to_tazes(town) - Given the name of a town, return the list of the records for the TAZes in the town.
+#   6. sector_to_tazes - Given the name of an 'analysis sector', return the list of the records for the TAZes
+#      in the sector.
+#   7. town_to_tazes(town) - Given the name of a town, return the list of the records for the TAZes in the town.
 #      Note: If a town with the same name occurs in more than one state, the  list of TAZes
 #      in _all_ such states is returned.
-#   7. town_state_to_tazes(town, state) - Given a town and a state abbreviation (e.g., 'MA'),
+#   8. town_state_to_tazes(town, state) - Given a town and a state abbreviation (e.g., 'MA'),
 #      return the list of records for the TAZes in the town
-#   8. state_to_tazes(state) - Given a state abbreviation, return the list of records for the TAZes in the state.
-#   9. taz_ids(TAZ_record_list) - Given a list of TAZ records, return a list of _only_ the TAZ IDs from those records.
+#   9. state_to_tazes(state) - Given a state abbreviation, return the list of records for the TAZes in the state.
+#  10. taz_ids(TAZ_record_list) - Given a list of TAZ records, return a list of _only_ the TAZ IDs from those records.
 #
 # Note:
 # For all of the above API calls that return a "list of TAZ records", each returned 'TAZ' is a Python 'dict' containing
@@ -181,7 +188,11 @@ class tazManager():
             retval = pydash.collections.filter_(_taz_table, lambda x: x['subregion'] == mpo_subregion)
         # end_if
         return retval
-    # def_def mpo_subregion_to_tazes()
+    # end_def mpo_subregion_to_tazes()
+    
+    def sector_to_tazes(sector):
+        retval = pydash.collections.filter_(_taz_table, lambda x: x['sector'] == sector)
+        return retval
     
     # Note: Returns TAZes in town _regardless_ of state.
     def town_to_tazes(town):
