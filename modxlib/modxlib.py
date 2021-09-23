@@ -14,7 +14,7 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.1.12"
+_version = "0.1.14"
 def get_version():
     return _version
 # end_def
@@ -280,7 +280,7 @@ _mode_to_metamode_mapping_table = {
 def mode_to_metamode(mode):
     retval = 'None'
     if mode in _mode_to_metamode_mapping_table:
-        return _mode_to_metamode_mapping_table(mode)
+        return _mode_to_metamode_mapping_table[mode]
     # end_if
     return retval
 # mode_to_metamode()
@@ -337,7 +337,7 @@ def export_gdf_to_shapefile(geo_dataframe, shapefile_fn):
         geo_dataframe.to_file(shapefile_fn, driver='ESRI Shapefile')
 # end_def
 
-# Function: export_gdf_to_shapefile
+# Function: bbox_of_gdf
 #
 # Summary: Return the bounding box of all the features in a geo-dataframe.
 #
