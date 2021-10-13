@@ -261,10 +261,10 @@ _mode_to_metamode_mapping_table = {
     38: 'Commuter_Rail',
     39: 'Commuter_Rail',
     40: 'Commuter_Rail',
-    41: 'Commuter_Rail',
-    42: 'Commuter_Rail',
-    43: 'Commuter_Rail',
-    44: 'Commuter_Rail',
+    41: 'RTA',
+    42: 'RTA',
+    43: 'RTA',
+    44: 'RTA',
     70: 'Walk' }
 
 # Function: mode_to_metamode
