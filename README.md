@@ -76,6 +76,8 @@ on the list of TAZ records.
 
 ## Miscellaneous Utilities for the Transit Mode
 
+__NOTE: The transit utilities are specific to TDM19. The will be modified for TDM23.__
+
 __Function__: __mode\_to\_metamode__
 
 __Summary__: Given one of the 50+ transportation "modes" supported by the TDM, return its "meta mode".
@@ -88,6 +90,22 @@ __Parameters__:
 
 __Return value__: String representing the input mode's "metamode."
 
+__Function__: import_transit_assignment
+
+__Summary__: Import transit assignment result CSV files for a given scenario.
+
+__Parameters:__:
+* scenario - Path to root directory of TDM transit boarding ("ONO.csv") files for a given scenario.
+
+__Return value__: a dict of the form:
+```
+{	'AM'    : dataframe with totals for the AM period,
+	'MD'    : datafrme with totals for the MD period,
+	'PM'    : dataframe with totals for the PM period,
+	'NT'    : dataframe with totals for the NT period,
+	'daily' : dataframe with totals for the entire day
+}
+```
 
 ## Dataframe and Geo-dataframe Utilities
 
