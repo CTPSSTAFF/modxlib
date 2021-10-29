@@ -14,7 +14,7 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.1.15"
+_version = "0.1.16"
 def get_version():
     return _version
 # end_def
@@ -220,51 +220,54 @@ class tazManager():
 #
 # Section 3: Miscellaneous utilities for the transit mode
 #
+# NOTE: Everything in Section 3 is specific to TDM19, and should only be used with TDM19 data.
+#       These routines will be changed to accord with how transit data is organized in TDM23.
+# -- B.K. 30 October 2021
+#
 _mode_to_metamode_mapping_table = {
-    1:  'MBTA_Bus',
-    2:  'MBTA_Bus',
-    3:  'MBTA_Bus' ,
-    4:  'Light_Rail',
-    5:  'Heavy_Rail',
-    6:  'Heavy_Rail',
-    7:  'Heavy_Rail',
-    8:  'Heavy_Rail',
-    9:  'Commuter_Rail',
-    10: 'Ferry',
-    11: 'Ferry',
-    12: 'Light_Rail',
-    13: 'Light_Rail',
-    14: 'Shuttle_Express',
-    15: 'Shuttle_Express',
-    16: 'Shuttle_Express',
-    17: 'RTA',
-    18: 'RTA',
-    19: 'RTA',
-    20: 'RTA',
-    21: 'RTA',
-    22: 'RTA',
-    23: 'Private',
-    24: 'Private',
-    25: 'Private',
-    26: 'Private',
-    27: 'Private',
-    28: 'Private',
-    29: 'Private',
-    30: 'Private',
-    31: 'Private',
-    32: 'Commuter_Rail',
-    33: 'Commuter_Rail',
-    34: 'Commuter_Rail',
-    35: 'Commuter_Rail',
-    36: 'Commuter_Rail',
-    37: 'Commuter_Rail',
-    38: 'Commuter_Rail',
-    39: 'Commuter_Rail',
-    40: 'Commuter_Rail',
-    41: 'RTA',
-    42: 'RTA',
-    43: 'RTA',
-    44: 'RTA',
+    1:  'MBTA Bus - Local Bus',
+    2:  'MBTA Bus - Inner Express Bus',
+    3:  'MBTA Bus - Outer Express Bus' ,
+    4:  'Green Line',
+    5:  'Red Line',
+    6:  'Mattapan Trolley',
+    7:  'Orange Line',
+    8:  'Blue Line',
+    9:  'Commuter Rail - Fairmount Line',
+    10: 'Ferries - Inner Harbor',
+    11: 'Ferries - Outer Harbor',
+    12: 'Silver Line',
+    13: 'Sliver Line',
+    14: 'Logan Express',
+    15: 'Logan Shuttle',
+    16: 'MGH and Other Shuttles',
+    17: 'RTA Bus - Brockton RTA',
+    18: 'RTA Bus - CATA RTA',
+    19: 'RTA Bus - GATRA RTA',
+    20: 'RTA Bus - Lowell RTA',
+    21: 'RTA Bus - Merrimack RTA',
+    22: 'RTA Bus - MetroWest RTA',
+    23: 'Private Bus - Bloom',
+    24: 'Private Bus - C & J Bus',
+    25: 'Private Bus - Cavalier Bus',
+    26: 'Private Bus - Concord Coach',
+    27: 'Private Bus - Dattco Bus',
+    28: 'Private Bus - Plymouth & Brockton',
+    29: 'Private Bus - Peter Pan',
+    30: 'Private Bus - Yankee',
+    31: 'MBTA Subsidized Bus Routes',
+    32: 'Commuter Rail - Beverly / Newburyport / Rockport Line',
+    33: 'Commuter Rail - Stoughton / Providence Line',
+    34: 'Commuter Rail - Greenbush / Plymouth / Kingston / Middleborough Line',
+    35: 'Commuter Rail - Haverhill Line',
+    36: 'Commuter Rail - Lowell Line',
+    37: 'Commuter Rail - Fitchburg Line',
+    38: 'Commuter Rail - Framingham / Worcester Line',
+    39: 'Commuter Rail - Needham Line',
+    40: 'Commuter Rail - Franklin Line',
+    41: 'RTA Bus - SRTA RTA',
+    42: 'RTA Bus - Worcester RTA',
+    43: 'RTA Bus- Pioneer Valley RTA',
     70: 'Walk' }
 
 # Function: mode_to_metamode
@@ -284,6 +287,183 @@ def mode_to_metamode(mode):
     # end_if
     return retval
 # mode_to_metamode()
+
+
+# calculate_total_daily_boardings: Calculate the daily total across all time periods.
+#
+#    This calculation requires a bit of subtelty, because the number of rows in the four
+#    data frames produced by produced in the calling function is NOT necessarily the same. 
+#    A brute-force apporach will not work, generally speaking.
+#    See comments in the code below for details.
+#
+# NOTE: This is a helper function for import_transit_assignment (q.v.)
+#   
+# Parameter: boardings_by_tod - a dict with the keys 'AM', 'MD', 'PM', and 'NT'
+#            for which the value of each key is a data frame containing the total
+#            boardings for the list of routes specified in the input CSV file.
+#
+# Return value: The input dict (boardings_by_tod) with an additional key 'daily'
+#               the value of which is a dataframe with the total daily boardings
+#               for all routes specified in the input CSV across all 4 time periods.
+#
+def calculate_total_daily_boardings(boardings_by_tod):
+    am_results = boardings_by_tod['AM']
+    md_results = boardings_by_tod['MD']
+    pm_results = boardings_by_tod['PM']
+    nt_results = boardings_by_tod['NT']
+    
+    # Compute the daily sums.
+    #
+    # Step 1: Join 'am' and 'md' dataframes
+    j1 = pd.merge(am_results, md_results, on=['ROUTE', 'STOP'], how='outer', suffixes=('_am', '_md'))
+    # Step 1.1 Replace NaN's with 0's
+    j1 = j1.fillna(0)
+
+    # Step 1.2 Compute the 'AM' + 'MD' sums
+    j1['DirectTransferOff'] = j1['DirectTransferOff_am'] + j1['DirectTransferOff_md']
+    j1['DirectTransferOn'] = j1['DirectTransferOn_am'] + j1['DirectTransferOn_md']
+    j1['DriveAccessOn'] = j1['DriveAccessOn_am'] + j1['DriveAccessOn_md']
+    j1['EgressOff'] = j1['EgressOff_am'] + j1['EgressOff_md']
+    j1['Off'] = j1['Off_am'] + j1['Off_md']
+    j1['On'] = j1['On_am'] + j1['On_md']
+    j1['WalkAccessOn'] = j1['WalkAccessOn_am'] + j1['WalkAccessOn_md'] 
+    j1['WalkTransferOff'] = j1['WalkTransferOff_am'] + j1['WalkTransferOff_md']
+    j1['WalkTransferOn'] = j1['WalkTransferOn_am'] + j1['WalkTransferOn_md']
+
+    # Step 1.3: Drop un-needed columns
+    cols_to_drop = ['DirectTransferOff_am', 'DirectTransferOff_md',
+                    'DirectTransferOn_am', 'DirectTransferOn_md',
+                    'DriveAccessOn_am', 'DriveAccessOn_md',
+                    'EgressOff_am','EgressOff_md',
+                    'Off_am', 'Off_md',
+                    'On_am', 'On_md',
+                    'WalkAccessOn_am', 'WalkAccessOn_md',
+                    'WalkTransferOff_am', 'WalkTransferOff_md',
+                    'WalkTransferOn_am', 'WalkTransferOn_md'
+                    ]
+    j1 = j1.drop(columns=cols_to_drop)
+
+    # Step 2: j2 - join 'pm' and 'nt' data frames
+    j2 = pd.merge(pm_results, nt_results, on=['ROUTE', 'STOP'], how='outer', suffixes=('_pm', '_nt'))
+    # Step 2.1: Replace NaN's with 0's
+    j2 = j2.fillna(0)
+
+    # Step 2.2: Compute the 'PM' + 'NT' sums
+    j2['DirectTransferOff'] = j2['DirectTransferOff_pm'] + j2['DirectTransferOff_nt']
+    j2['DirectTransferOn'] = j2['DirectTransferOn_pm'] + j2['DirectTransferOn_nt']
+    j2['DriveAccessOn'] = j2['DriveAccessOn_pm'] + j2['DriveAccessOn_nt']
+    j2['EgressOff'] = j2['EgressOff_pm'] + j2['EgressOff_nt']
+    j2['Off'] = j2['Off_pm'] + j2['Off_nt']
+    j2['On'] = j2['On_pm'] + j2['On_nt']
+    j2['WalkAccessOn'] = j2['WalkAccessOn_pm'] + j2['WalkAccessOn_nt'] 
+    j2['WalkTransferOff'] = j2['WalkTransferOff_pm'] + j2['WalkTransferOff_nt']
+    j2['WalkTransferOn'] = j2['WalkTransferOn_pm'] + j2['WalkTransferOn_nt']
+
+    # Step 2.3: Drop un-needed columns
+    cols_to_drop = ['DirectTransferOff_pm', 'DirectTransferOff_nt',
+                    'DirectTransferOn_pm', 'DirectTransferOn_nt',
+                    'DriveAccessOn_pm', 'DriveAccessOn_nt',
+                    'EgressOff_pm','EgressOff_nt',
+                    'Off_pm', 'Off_nt',
+                    'On_pm', 'On_nt',
+                    'WalkAccessOn_pm', 'WalkAccessOn_nt',
+                    'WalkTransferOff_pm', 'WalkTransferOff_nt',
+                    'WalkTransferOn_pm', 'WalkTransferOn_nt'
+                    ]
+    j2 = j2.drop(columns=cols_to_drop)
+
+    # Step 3: Join "j1" and "j2" to produce a dataframe with the daily totals
+    daily_df = pd.merge(j1, j2, on=['ROUTE', 'STOP'], how='outer', suffixes=('_j1', '_j2'))
+    # Step 3.1 : Replace any NaN's with 0's. This line _shouldn't_ be needed - just being extra cautious.
+    daily_df = daily_df.fillna(0)
+
+    # Step 3.2 : Compute THE daily sums
+    daily_df['DirectTransferOff'] = daily_df['DirectTransferOff_j1'] + daily_df['DirectTransferOff_j2']
+    daily_df['DirectTransferOn'] = daily_df['DirectTransferOn_j1'] + daily_df['DirectTransferOn_j2']
+    daily_df['DriveAccessOn'] = daily_df['DriveAccessOn_j1'] + daily_df['DriveAccessOn_j2']
+    daily_df['EgressOff'] = daily_df['EgressOff_j1'] + daily_df['EgressOff_j2']
+    daily_df['Off'] = daily_df['Off_j1'] + daily_df['Off_j2']
+    daily_df['On'] = daily_df['On_j1'] + daily_df['On_j2']
+    daily_df['WalkAccessOn'] = daily_df['WalkAccessOn_j1'] + daily_df['WalkAccessOn_j2'] 
+    daily_df['WalkTransferOff'] = daily_df['WalkTransferOff_j1'] + daily_df['WalkTransferOff_j2']
+    daily_df['WalkTransferOn'] = daily_df['WalkTransferOn_j1'] + daily_df['WalkTransferOn_j2']
+
+    # Step 3.3 : Drop un-needed columns
+    cols_to_drop = ['DirectTransferOff_j1', 'DirectTransferOff_j2',
+                    'DirectTransferOn_j1', 'DirectTransferOn_j2',
+                    'DriveAccessOn_j1', 'DriveAccessOn_j2',
+                    'EgressOff_j1','EgressOff_j2',
+                    'Off_j1', 'Off_j2',
+                    'On_j1', 'On_j2',
+                    'WalkAccessOn_j1', 'WalkAccessOn_j2',
+                    'WalkTransferOff_j1', 'WalkTransferOff_j2',
+                    'WalkTransferOn_j1', 'WalkTransferOn_j2'
+                    ]
+    daily_df = daily_df.drop(columns=cols_to_drop)
+
+    # Finally, we've got the 'daily' total dataframe!
+    boardings_by_tod['daily'] = daily_df
+    return boardings_by_tod
+# end_def calculate_total_daily_boardings()
+
+# import_transit_assignment: Import transit assignment result CSV files for a given scenario.
+#
+# 1. Read all CSV files for each time period ('tod'), and caclculate the sums for each time period.
+#    Step 1 can be performed as a brute-force sum across all columns, since the number of rows in
+#    the CSVs (and thus the dataframes) for any given time period are all the same.
+#
+# 2. Calculate the daily total across all time periods.
+#    Step 2 requires a bit of subtelty, because the number of rows in the data frames produced in 
+#    Step 1 is NOT necessarily the same. A brute-force apporach will not work, generally speaking.
+#    See comments in the code below for details.
+#    NOTE: This step is performed by the helper function calculate_total_daily_boardings.
+#
+# 3. Return value: a dict of the form:
+#    {'AM'    : dataframe with totals for the AM period,
+#     'MD'    : datafrme with totals for the MD period,
+#     'PM'    : dataframe with totals for the PM period,
+#     'NT'    : dataframe with totals for the NT period,
+#     'daily' : dataframe with totals for the entire day
+#   }
+# 
+def import_transit_assignment(scenario):
+    base = scenario + r'out/'
+    tods = ["AM", "MD", "PM", "NT"]
+    # At the end of execution of this function, the dictionary variable'TODsums' will contain all the TOD summed results:
+    # one key-value-pair for each 'tod' AND the 'daily' total as well.
+    
+    # The dict 'TODsums' is the return value of this function.
+    TODsums = { 'AM' : None, 'MD' : None, 'PM' : None, 'NT' : None }
+
+    # Import CSV files and create sum tables for each T-O-D (a.k.a. 'time period').
+    for tod in tods:
+        # Get full paths to _all_ CSV files for the current t-o-d.
+        x = tod + '/' 
+        fq_csv_fns = glob.glob(os.path.join(base,x,r'*.csv'))
+        
+        # 'tablist' : List of all the dataframes created from reading in the all the CSV files for the current t-o-d
+        tablist = []
+        for csv_file in fq_csv_fns:
+            # Read CSV file into dataframe, set indices, and append to 'tablist'
+            tablist.append(pd.read_csv(csv_file).set_index(['ROUTE','STOP']))
+        #
+  
+        # Sum the tables for the current TOD
+        TODsums[tod] = reduce(lambda a, b: a.add(b, fill_value=0), tablist)
+    # end_for over all tod's
+
+    TODsums =  calculate_total_daily_boardings(TODsums)
+    
+    # Ensure that the ROUTE and STOP columns of each dataframe in TODsums aren't indices.
+    for k in TODsums.keys():
+        TODsums[k] = TODsums[k].reset_index()
+    #
+    return TODsums
+# end_def import_transit_assignment()
+#
+# END of Section 3: Utilities for the transit mode - specific to TDM19.
+###############################################################################
+
 
 ###############################################################################
 #
