@@ -76,9 +76,9 @@ on the list of TAZ records.
 
 ## Miscellaneous Utilities for the Transit Mode
 
-__NOTE: The transit utilities are specific to TDM19. The will be modified for TDM23.__
+__NOTE: The transit utilities are specific to TDM19. They will be modified for TDM23.__
 
-__Function__: __mode\_to\_metamode__
+__Function__: __mode\_to\_metamode(mode)__
 
 __Summary__: Given one of the 50+ transportation "modes" supported by the TDM, return its "meta mode".
 For example, the model supports 3 different "modes" for MBTA bus routes; all three of 
@@ -90,7 +90,7 @@ __Parameters__:
 
 __Return value__: String representing the input mode's "metamode."
 
-__Function__: import_transit_assignment
+__Function__: __import_transit_assignment(scenario)__
 
 __Summary__: Import transit assignment result CSV files for a given scenario.
 
@@ -109,7 +109,7 @@ __Return value__: a dict of the form:
 
 ## Dataframe and Geo-dataframe Utilities
 
-__Function__: export\_gdf\_to\_geojson(geo_dataframe, geojson_fn)__
+__Function__: __export\_gdf\_to\_geojson(geo_dataframe, geojson_fn)__
 
 __Summary__: Export a GeoPandas gdataframe to a GeoJSON file.
 
