@@ -8,17 +8,28 @@ __Function__: __get_version()__ - Returns version ID string of library.
 
 ## Trip Table Management
 
-__Function__: __load\_tts\_as\_np\_arrays(tts, time_periods=None, mode_list=None)__
+__Function__: __open\_trip\_tables(tt_dir)__
 
-__Summary__: Load the trip tables for the specified list of time periods for the specified list of modes as NumPy arrays.
-If no list of time periods is passed, trip tables for all time periods will be returned.
+__Summary__: Given a directory containing the trip tables in OMX format for the 
+four daily time periods used by the mode, open them and return 
+a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+value is the corresponding open OMX file.
+
+__Parameters__: tt_dir - directory containing trip table files in OMX format
+
+__Return value__: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+value is the corresponding open OMX file.
+
+__Function__: __load\_trip_tables(tt_dir, modes=None)__
+
+__Summary__: Load the trip tables for all time periods the specified list of modes from
+open OMX files into NumPy arrays.
 If no list of modes is passed, trip tables for all modes will be returned.
 
 __Parameters__
-* tts - trip tables, a dict (keys: 'am', 'md', 'pm', and 'nt'), each element of which is an '.omx' trip table file that has 
-been opened using the openmatrix library
-* time_periods - list of time periods (strings), or None
-* mode_list - list of modes (strings), or None
+* tt_omxs - Dictionary, keyed by time period identifier ('am', 'md', 'pm', and 'nt'),
+each of whose values is the open OMX trip table file for the corresponding time period.
+* modes - list of modes (strings), or None
 
 __Return value__: A two-level dictionary (i.e., first level = time period, second level = mode)
 the second level of which contain the trip table(s), in the form of a numPy array,for the \[time_period\]\[mode\] in question.
