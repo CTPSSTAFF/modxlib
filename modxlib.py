@@ -36,12 +36,12 @@ _all_modes = _auto_modes + _truck_modes + _nm_modes + _transit_modes
 # Summary: Given a directory containing the trip tables in OMX format for the 
 #          four daily time periods used by the mode, open them and return 
 #          a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
-#          vallue is the corresponding open OMX file.
+#          value is the corresponding open OMX file.
 #
 # Parameters:   tt_dir - directory containing trip table files in OMX format
 #
 # Return value: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
-#               vallue is the corresponding open OMX file.
+#               value is the corresponding open OMX file.
 #
 def open_trip_tables(tt_dir):
     tt_am = tt_dir + 'AfterSC_Final_AM_Tables.omx'
