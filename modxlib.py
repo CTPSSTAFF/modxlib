@@ -14,7 +14,7 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.1.16"
+_version = "0.2.0"
 def get_version():
     return _version
 # end_def
@@ -30,42 +30,61 @@ _nm_modes = [ 'Walk', 'Bike' ]
 _transit_modes = [ 'DAT_Boat', 'DET_Boat', 'DAT_CR', 'DET_CR', 'DAT_LB', 'DET_LB', 'DAT_RT', 'DET_RT', 'WAT' ]
 _all_modes = _auto_modes + _truck_modes + _nm_modes + _transit_modes
 
-# Function: load_tts_as_np_arrays
+
+# Functio: open_trip_tables
 #
-# Summary: Load the trip tables for the specified list of time periods for the specified list of modes as NumPy arrays.
-#          If no list of time periods is passed, trip tables for all time periods will be returned.
+# Summary: Given a directory containing the trip tables in OMX format for the 
+#          four daily time periods used by the mode, open them and return 
+#          a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+#          vallue is the corresponding open OMX file.
+#
+# Parameters:   tt_dir - directory containing trip table files in OMX format
+#
+# Return value: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+#               vallue is the corresponding open OMX file.
+#
+def open_trip_tables(tt_dir):
+    tt_am = tt_dir + 'AfterSC_Final_AM_Tables.omx'
+    tt_md = tt_dir + 'AfterSC_Final_MD_Tables.omx'
+    tt_pm = tt_dir + 'AfterSC_Final_PM_Tables.omx'
+    tt_nt = tt_dir + 'AfterSC_Final_NT_Tables.omx'
+    tt_omxs = { 'am' : omx.open_file(tt_am,'r'),
+                'md' : omx.open_file(tt_pm,'r'),
+                'pm' : omx.open_file(tt_pm,'r'),
+                'nt' : omx.open_file(tt_nt,'r') 
+              }   
+    return tt_omxs
+# end_def open_trip_tables()
+
+# Function: load_trip_tables
+# 
+# Summary: Load the trip tables for all time periods the specified list of modes from
+#          open OMX files into NumPy arrays.
 #          If no list of modes is passed, trip tables for all modes will be returned.
 #
-# Parameters:   tts             - trip tables, a dict (keys: 'am', 'md', 'pm', and 'nt'),
-#                                 each element of which is an '.omx' trip table file that has 
-#                                 been opened using the openmatrix library
-#               time_periods    - list of time periods (strings), or None
-#               mode_list       - list of modes (strings), or None
+# Parameters - tt_omxs - Dictionary, keyed by time period identifier ('am', 'md', 'pm', and 'nt'),
+#                        each of whose values is the open OMX trip table file for the corresponding
+#                        time period.
+#              modes - List of modes (strings) or None
 #
 # Return value: A two-level dictionary (i.e., first level = time period, second level = mode)
 #               the second level of which contain the trip table, in the form of a numPy array,
 #               for the [time_period][mode] in question.
 #
-def load_tts_as_np_arrays(tts, time_periods=None, mode_list=None):
-    if time_periods == None:
-        time_periods = _all_time_periods
+def load_trip_tables(tt_omxs, modes=None):
+    if modes == None:
+        modes = _all_modes
     #
-    if mode_list == None:
-        mode_list = _all_modes
-    #
-    retval = {}
-    for period in time_periods:
-        retval[period] = None
-    #
-    for period in time_periods:
-        retval[period] = {}
-        for mode in mode_list:
-            temp = tts[period][mode]
+    retval  = { 'am' : {}, 'md' : {}, 'pm' : {}, 'nt' : {} }
+    for period in _all_time_periods:
+        for mode in modes:
+            temp = tt_omxs[period][mode]
             retval[period][mode] = np.array(temp)
         # end_for
     # end_for
     return retval
-# end_def load_tts_for_mode_list_as_np_arrays()
+# end_def load_trip_tables()
+
 
 ###############################################################################
 #
