@@ -26,7 +26,7 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.2.1"
+_version = "0.2.2"
 def get_version():
     return _version
 # end_def
@@ -44,21 +44,21 @@ _transit_modes = [ 'DAT_Boat', 'DET_Boat', 'DAT_CR', 'DET_CR', 'DAT_LB', 'DET_LB
 _all_modes = _auto_modes + _truck_modes + _nm_modes + _transit_modes
 
 def open_trip_tables(tt_dir):
-"""
-Function: open_trip_tables
+    """
+    Function: open_trip_tables
 
-Summary: Given a directory containing the trip tables in OMX format for the 
-         four daily time periods used by the mode, open them and return 
-         a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
-         value is the corresponding open OMX file.
+    Summary: Given a directory containing the trip tables in OMX format for the 
+             four daily time periods used by the mode, open them and return 
+             a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+             value is the corresponding open OMX file.
 
-Args: tt_dir: directory containing trip table files in OMX format
+    Args: tt_dir: directory containing trip table files in OMX format
 
-Returns: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
-         value is the corresponding open OMX file.
-         
-Raises: N/A
-"""
+    Returns: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+             value is the corresponding open OMX file.
+             
+    Raises: N/A
+    """
     tt_am = tt_dir + 'AfterSC_Final_AM_Tables.omx'
     tt_md = tt_dir + 'AfterSC_Final_MD_Tables.omx'
     tt_pm = tt_dir + 'AfterSC_Final_PM_Tables.omx'
@@ -72,24 +72,24 @@ Raises: N/A
 # end_def open_trip_tables()
 
 def load_trip_tables(tt_omxs, modes=None):
-"""
-Function: load_trip_tables
+    """
+    Function: load_trip_tables
 
-Summary: Load the trip tables for all time periods the specified list of modes from
-         open OMX files into NumPy arrays.
-         If no list of modes is passed, trip tables for all modes will be returned.
+    Summary: Load the trip tables for all time periods the specified list of modes from
+             open OMX files into NumPy arrays.
+             If no list of modes is passed, trip tables for all modes will be returned.
 
-Args: tt_omxs: Dictionary, keyed by time period identifier ('am', 'md', 'pm', and 'nt'),
-               each of whose values is the open OMX trip table file for the corresponding
-               time period.
-       modes: List of modes (strings) or None
+    Args: tt_omxs: Dictionary, keyed by time period identifier ('am', 'md', 'pm', and 'nt'),
+                   each of whose values is the open OMX trip table file for the corresponding
+                   time period.
+           modes: List of modes (strings) or None
 
-Returns: A two-level dictionary (i.e., first level = time period, second level = mode)
-         the second level of which contain the trip table, in the form of a numPy array,
-         for the [time_period][mode] in question.
+    Returns: A two-level dictionary (i.e., first level = time period, second level = mode)
+             the second level of which contain the trip table, in the form of a numPy array,
+             for the [time_period][mode] in question.
 
-Raises: N/A
-""" 
+    Raises: N/A
+    """ 
     if modes == None:
         modes = _all_modes
     #
@@ -110,38 +110,38 @@ Raises: N/A
 #
 #
 class tazManager():
-"""
-class: tazManager
+    """
+    class: tazManager
 
-Summary: The class "tazManager" provides a set of methods to perform _attribute_ queries
-         on an ESRI-format "Shapefile" that represents the TAZes in the model region.
-         The attributes are read from the Shapefile's .DBF file; other components of
-         the Shapefile are ignored.
-         
-The Shapefile's .DBF file _must_ contain the following attributes:
-1. id
-2. taz
-3. type - 'I' (internal) or 'E' (external)
-4. town
-5. state - state abbreviation, e.g., 'MA'
-6. town_state - town, state
-7. mpo - abbreviation of MPO name: 
-8. in_brmpo - 1 (yes) or 0 (no)
-9. subregion - abbreviation of Boston Region MPO subregion or NULL
-10. sector - 'analysis sector' as defined by Bill Kuttner.
-              Either 'Northeast', 'North', 'Northwest', 'West', 'Southwest',
-              'South', 'Southeast', 'Central' or ''; the empty string ('')
-              indicates that the TAZ is outsize of the 164 municipalities
-              comprising what was once known as the 'CTPS Model Region'.
+    Summary: The class "tazManager" provides a set of methods to perform _attribute_ queries
+             on an ESRI-format "Shapefile" that represents the TAZes in the model region.
+             The attributes are read from the Shapefile's .DBF file; other components of
+             the Shapefile are ignored.
+             
+    The Shapefile's .DBF file _must_ contain the following attributes:
+    1. id
+    2. taz
+    3. type - 'I' (internal) or 'E' (external)
+    4. town
+    5. state - state abbreviation, e.g., 'MA'
+    6. town_state - town, state
+    7. mpo - abbreviation of MPO name: 
+    8. in_brmpo - 1 (yes) or 0 (no)
+    9. subregion - abbreviation of Boston Region MPO subregion or NULL
+    10. sector - 'analysis sector' as defined by Bill Kuttner.
+                  Either 'Northeast', 'North', 'Northwest', 'West', 'Southwest',
+                  'South', 'Southeast', 'Central' or ''; the empty string ('')
+                  indicates that the TAZ is outsize of the 164 municipalities
+                  comprising what was once known as the 'CTPS Model Region'.
 
-An object of class tazManager is instantiated by passing in the fully-qualified path
-to a Shapefile to the class constructor. Hence, it is possible to have more than one
-instance of this class active simultaneously, should this be needed.
+    An object of class tazManager is instantiated by passing in the fully-qualified path
+    to a Shapefile to the class constructor. Hence, it is possible to have more than one
+    instance of this class active simultaneously, should this be needed.
 
-Note: For all of the above methods listed bleo that return a "list of TAZ records", 
-each returned 'TAZ' is a Python 'dict' containing all of the keys (i.e., 'attributes') listed above. 
-To convert such a list to a list of _only_ the TAZ IDs, call taz_ids on the list of TAZ records.
-"""
+    Note: For all of the above methods listed bleo that return a "list of TAZ records", 
+    each returned 'TAZ' is a Python 'dict' containing all of the keys (i.e., 'attributes') listed above. 
+    To convert such a list to a list of _only_ the TAZ IDs, call taz_ids on the list of TAZ records.
+    """
     _instance = None
     _default_base = r'G:/Data_Resources/modx/canonical_TAZ_shapefile/'
     _default_shapefile_fn = 'candidate_CTPS_TAZ_STATEWIDE_2019.shp'
@@ -326,19 +326,19 @@ _mode_to_metamode_mapping_table = {
     70: 'Walk' }
 
 def mode_to_metamode(mode):
-"""
-Function: mode_to_metamode
+    """
+    Function: mode_to_metamode
 
-Summary: Given one of the 50+ transportation "modes" supported by the TDM, return its "meta mode".
-         For example, the model supports 3 different "modes" for MBTA bus routes; all three of 
-         these have the common "metamode" of 'MBTA_Bus'.
+    Summary: Given one of the 50+ transportation "modes" supported by the TDM, return its "meta mode".
+             For example, the model supports 3 different "modes" for MBTA bus routes; all three of 
+             these have the common "metamode" of 'MBTA_Bus'.
 
-Args: mode: String identifying one of the transporation "modes" supported by the TDM.
+    Args: mode: String identifying one of the transporation "modes" supported by the TDM.
 
-Returns: String representing the input mode's "metamode."
+    Returns: String representing the input mode's "metamode."
 
-Raises: N/A
-"""
+    Raises: N/A
+    """
     retval = 'None'
     if mode in _mode_to_metamode_mapping_table:
         return _mode_to_metamode_mapping_table[mode]
@@ -347,27 +347,27 @@ Raises: N/A
 # mode_to_metamode()
 
 def calculate_total_daily_boardings(boardings_by_tod):
-"""
-Function: calculate_total_daily_boardings
+    """
+    Function: calculate_total_daily_boardings
 
-Summary: Calculate the daily total boardings across all time periods.
-This calculation requires a bit of subtelty, because the number of rows in the four
-data frames produced by produced in the calling function is NOT necessarily the same. 
-A brute-force apporach will not work, generally speaking.
-See comments in the code below for details.
+    Summary: Calculate the daily total boardings across all time periods.
+    This calculation requires a bit of subtelty, because the number of rows in the four
+    data frames produced by produced in the calling function is NOT necessarily the same. 
+    A brute-force apporach will not work, generally speaking.
+    See comments in the code below for details.
 
-NOTE: This is a helper function for import_transit_assignment (q.v.)
-  
-Args: boardings_by_tod: a dict with the keys 'AM', 'MD', 'PM', and 'NT'
-      for which the value of each key is a data frame containing the total
-      boardings for the list of routes specified in the input CSV file.
+    NOTE: This is a helper function for import_transit_assignment (q.v.)
+      
+    Args: boardings_by_tod: a dict with the keys 'AM', 'MD', 'PM', and 'NT'
+          for which the value of each key is a data frame containing the total
+          boardings for the list of routes specified in the input CSV file.
 
-Returns: The input dict (boardings_by_tod) with an additional key 'daily'
-         the value of which is a dataframe with the total daily boardings
-         for all routes specified in the input CSV across all 4 time periods.
+    Returns: The input dict (boardings_by_tod) with an additional key 'daily'
+             the value of which is a dataframe with the total daily boardings
+             for all routes specified in the input CSV across all 4 time periods.
 
-Raises: N/A
-"""
+    Raises: N/A
+    """
     am_results = boardings_by_tod['AM']
     md_results = boardings_by_tod['MD']
     pm_results = boardings_by_tod['PM']
@@ -468,41 +468,41 @@ Raises: N/A
 # end_def calculate_total_daily_boardings()
 
 def import_transit_assignment(scenario):
-"""
-Function: import_transit_assignment
+    """
+    Function: import_transit_assignment
 
-Summary:  Import transit assignment result CSV files for a given scenario.
+    Summary:  Import transit assignment result CSV files for a given scenario.
 
-1. Read all CSV files for each time period ('tod'), and caclculate the sums for each time period.
-   Step 1 can be performed as a brute-force sum across all columns, since the number of rows in
-   the CSVs (and thus the dataframes) for any given time period are all the same.
+    1. Read all CSV files for each time period ('tod'), and caclculate the sums for each time period.
+       Step 1 can be performed as a brute-force sum across all columns, since the number of rows in
+       the CSVs (and thus the dataframes) for any given time period are all the same.
 
-2. Calculate the daily total across all time periods.
-   Step 2 requires a bit of subtelty, because the number of rows in the data frames produced in 
-   Step 1 is NOT necessarily the same. A brute-force apporach will not work, generally speaking.
-   See comments in the code below for details.
-   NOTE: This step is performed by the helper function calculate_total_daily_boardings.
+    2. Calculate the daily total across all time periods.
+       Step 2 requires a bit of subtelty, because the number of rows in the data frames produced in 
+       Step 1 is NOT necessarily the same. A brute-force apporach will not work, generally speaking.
+       See comments in the code below for details.
+       NOTE: This step is performed by the helper function calculate_total_daily_boardings.
 
-3. Return value: a dict of the form:
-   {'AM'    : dataframe with totals for the AM period,
-    'MD'    : datafrme with totals for the MD period,
-    'PM'    : dataframe with totals for the PM period,
-    'NT'    : dataframe with totals for the NT period,
-    'daily' : dataframe with totals for the entire day
-  }
+    3. Return value: a dict of the form:
+       {'AM'    : dataframe with totals for the AM period,
+        'MD'    : datafrme with totals for the MD period,
+        'PM'    : dataframe with totals for the PM period,
+        'NT'    : dataframe with totals for the NT period,
+        'daily' : dataframe with totals for the entire day
+      }
 
-Args: scenario: path to directory containing transit assignment results in CSV file format
+    Args: scenario: path to directory containing transit assignment results in CSV file format
 
-Returns: a dict of the form:
-   		{ 'AM'    : dataframe with totals for the AM period,
-    		  'MD'    : datafrme with totals for the MD period,
-    		  'PM'    : dataframe with totals for the PM period,
-    		  'NT'    : dataframe with totals for the NT period,
-    		  'daily' : dataframe with totals for the entire day
-		}
+    Returns: a dict of the form:
+            { 'AM'    : dataframe with totals for the AM period,
+                  'MD'    : datafrme with totals for the MD period,
+                  'PM'    : dataframe with totals for the PM period,
+                  'NT'    : dataframe with totals for the NT period,
+                  'daily' : dataframe with totals for the entire day
+            }
 
-Raises: N/A
-"""
+    Raises: N/A
+    """
     base = scenario + r'out/'
     tods = ["AM", "MD", "PM", "NT"]
     # At the end of execution of this function, the dictionary variable'TODsums' will contain all the TOD summed results:
@@ -546,20 +546,20 @@ Raises: N/A
 # Section 4: Dataframe and Geo-dataframe utilities
 #
 def export_df_to_csv(dataframe, csv_fn, column_list=None):
-"""
-Function: export_df_to_csv
+    """
+    Function: export_df_to_csv
 
-Summary: Export columns in a dataframe to a CSV file.
-         If a list of columns to export isn't specified, export all columns.
+    Summary: Export columns in a dataframe to a CSV file.
+             If a list of columns to export isn't specified, export all columns.
 
-Args: dataframe: Pandas dataframe
-      csv_fn: Name of CSV file
-      column_list: List of columns to export, or None
+    Args: dataframe: Pandas dataframe
+          csv_fn: Name of CSV file
+          column_list: List of columns to export, or None
 
-Returns: N/A
+    Returns: N/A
 
-Raises: N/A
-"""
+    Raises: N/A
+    """
     if column_list != None:
         dataframe.to_csv(csv_fn, column_list, sep=',')
     else:
@@ -575,18 +575,18 @@ def export_gdf_to_shapefile(geo_dataframe, shapefile_fn):
 # end_def
 
 def bbox_of_gdf(gdf):
-"""
-Function: bbox_of_gdf
+    """
+    Function: bbox_of_gdf
 
-Summary: Return the bounding box of all the features in a geo-dataframe.
+    Summary: Return the bounding box of all the features in a geo-dataframe.
 
-Args: gdf: a GeoPandas geo-dataframe
+    Args: gdf: a GeoPandas geo-dataframe
 
-Returns: Bounding box of all the features in the input geodataframe.
-         The bounding box is returned as a dictionary with the keys: 
-         { 'minx', 'miny', 'maxx', 'maxy'}.
+    Returns: Bounding box of all the features in the input geodataframe.
+             The bounding box is returned as a dictionary with the keys: 
+             { 'minx', 'miny', 'maxx', 'maxy'}.
 
-Raises: N/A
+    Raises: N/A
 """
     bounds_tuples = gdf['geometry'].map(lambda x: x.bounds)
     bounds_dicts = []
@@ -604,17 +604,17 @@ Raises: N/A
 # end_def bbox_of_gdf()
 
 def center_of_bbox(bbox):
-"""
-Function: center_of_bbox
+    """
+    Function: center_of_bbox
 
-Summary: Given a geomtric "bounding box", return its center point. 
+    Summary: Given a geomtric "bounding box", return its center point. 
 
-Args: bbox: Bounding box in the form of a dictionary with the keys { 'minx', 'miny', 'maxx', 'maxy'}
+    Args: bbox: Bounding box in the form of a dictionary with the keys { 'minx', 'miny', 'maxx', 'maxy'}
 
-Returns: Center point of the bounding box as a dictionary with the keys { 'x' , 'y' }.
+    Returns: Center point of the bounding box as a dictionary with the keys { 'x' , 'y' }.
 
-Raises: N/A
-"""
+    Raises: N/A
+    """
     center_x = bbox['minx'] + (bbox['maxx'] - bbox['minx']) / 2
     center_y = bbox['miny'] + (bbox['maxy'] - bbox['miny']) / 2
     retval = { 'x' : center_x, 'y' : center_y }
