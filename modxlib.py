@@ -1,4 +1,16 @@
-# modxlib.py - Python class implementing CTPS 'modxlib'
+"""
+modxlib - Python module implementing utilites used by CTPS Model Data Explorer.
+
+The uilities fall into the following categories:
+0. Version identification
+1. Trip Table management
+2. TAZ "shapefile" management
+3. Utilities for the transit mode
+4. Utilities for working with dataframes and geodataframes
+
+This list will be continued.
+"""
+# modxlib.py - Python module implementing CTPS 'modxlib'
 #
 # Author: Ben Krepp (bkrepp@ctps.org)
 #
@@ -14,10 +26,11 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.2.0"
+_version = "0.2.1"
 def get_version():
     return _version
 # end_def
+
 
 ###############################################################################
 #
@@ -30,20 +43,22 @@ _nm_modes = [ 'Walk', 'Bike' ]
 _transit_modes = [ 'DAT_Boat', 'DET_Boat', 'DAT_CR', 'DET_CR', 'DAT_LB', 'DET_LB', 'DAT_RT', 'DET_RT', 'WAT' ]
 _all_modes = _auto_modes + _truck_modes + _nm_modes + _transit_modes
 
-
-# Functio: open_trip_tables
-#
-# Summary: Given a directory containing the trip tables in OMX format for the 
-#          four daily time periods used by the mode, open them and return 
-#          a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
-#          value is the corresponding open OMX file.
-#
-# Parameters:   tt_dir - directory containing trip table files in OMX format
-#
-# Return value: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
-#               value is the corresponding open OMX file.
-#
 def open_trip_tables(tt_dir):
+"""
+Function: open_trip_tables
+
+Summary: Given a directory containing the trip tables in OMX format for the 
+         four daily time periods used by the mode, open them and return 
+         a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+         value is the corresponding open OMX file.
+
+Args: tt_dir: directory containing trip table files in OMX format
+
+Returns: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+         value is the corresponding open OMX file.
+         
+Raises: N/A
+"""
     tt_am = tt_dir + 'AfterSC_Final_AM_Tables.omx'
     tt_md = tt_dir + 'AfterSC_Final_MD_Tables.omx'
     tt_pm = tt_dir + 'AfterSC_Final_PM_Tables.omx'
@@ -56,22 +71,25 @@ def open_trip_tables(tt_dir):
     return tt_omxs
 # end_def open_trip_tables()
 
-# Function: load_trip_tables
-# 
-# Summary: Load the trip tables for all time periods the specified list of modes from
-#          open OMX files into NumPy arrays.
-#          If no list of modes is passed, trip tables for all modes will be returned.
-#
-# Parameters - tt_omxs - Dictionary, keyed by time period identifier ('am', 'md', 'pm', and 'nt'),
-#                        each of whose values is the open OMX trip table file for the corresponding
-#                        time period.
-#              modes - List of modes (strings) or None
-#
-# Return value: A two-level dictionary (i.e., first level = time period, second level = mode)
-#               the second level of which contain the trip table, in the form of a numPy array,
-#               for the [time_period][mode] in question.
-#
 def load_trip_tables(tt_omxs, modes=None):
+"""
+Function: load_trip_tables
+
+Summary: Load the trip tables for all time periods the specified list of modes from
+         open OMX files into NumPy arrays.
+         If no list of modes is passed, trip tables for all modes will be returned.
+
+Args: tt_omxs: Dictionary, keyed by time period identifier ('am', 'md', 'pm', and 'nt'),
+               each of whose values is the open OMX trip table file for the corresponding
+               time period.
+       modes: List of modes (strings) or None
+
+Returns: A two-level dictionary (i.e., first level = time period, second level = mode)
+         the second level of which contain the trip table, in the form of a numPy array,
+         for the [time_period][mode] in question.
+
+Raises: N/A
+""" 
     if modes == None:
         modes = _all_modes
     #
@@ -90,57 +108,40 @@ def load_trip_tables(tt_omxs, modes=None):
 #
 # Section 2: TAZ "shapefile" management
 #
-# Summary: The class "tazManager" provides a set of methods to perform _attribute_ queries
-#          on an ESRI-format "Shapefile" that represents the TAZes in the model region.
-#          The attributes are read from the Shapefile's .DBF file; other components of
-#          the Shapefile are ignored.
-#
-#          The Shapefile's .DBF file _must_ contain the following attributes:
-#              1. id
-#              2. taz
-#              3. type - 'I' (internal) or 'E' (external)
-#              4. town
-#              5. state - state abbreviation, e.g., 'MA'
-#              6. town_state - town, state
-#              7. mpo - abbreviation of MPO name: 
-#              8. in_brmpo - 1 (yes) or 0 (no)
-#              9. subregion - abbreviation of Boston Region MPO subregion or NULL
-#             10. sector - 'analysis sector' as defined by Bill Kuttner.
-#                          Either 'Northeast', 'North', 'Northwest', 'West', 'Southwest',
-#                          'South', 'Southeast', 'Central' or ''; the empty string ('')
-#                          indicates that the TAZ is outsize of the 164 municipalities
-#                          comprising what was once known as the 'CTPS Model Region'.
-#
-#         An object of class tazManager is instantiated by passing in the fully-qualified path
-#         to a Shapefile to the class constructor. Hence, it is possible to have more than one
-#         instance of this class active simultaneously, should this be needed.
-#
-# Class tazManager
-# Methods:
-#   1. __init__(path_to_shapefile) - class constructor
-#   2. mpo_to_tazes(mpo) - Given the name (i.e., abbreviation) of an MPO,
-#      return a list of the records for the TAZes in it
-#   3. brmpo_tazes() - Return the list of the records for the TAZes in the Boston Region MPO
-#   4. brmpo_town_to_tazes(town) - Given the name of a town in the Boston Region MPO,
-#      return a list of the records for the TAZes in it
-#   5. brmpo_subregion_to_tazes(subregion) - Given the name (i.e., abbreviation) of a Boston Region MPO subregion,
-#      return a list of the records for the TAZes in it
-#   6. sector_to_tazes - Given the name of an 'analysis sector', return the list of the records for the TAZes
-#      in the sector.
-#   7. town_to_tazes(town) - Given the name of a town, return the list of the records for the TAZes in the town.
-#      Note: If a town with the same name occurs in more than one state, the  list of TAZes
-#      in _all_ such states is returned.
-#   8. town_state_to_tazes(town, state) - Given a town and a state abbreviation (e.g., 'MA'),
-#      return the list of records for the TAZes in the town
-#   9. state_to_tazes(state) - Given a state abbreviation, return the list of records for the TAZes in the state.
-#  10. taz_ids(TAZ_record_list) - Given a list of TAZ records, return a list of _only_ the TAZ IDs from those records.
-#
-# Note:
-# For all of the above API calls that return a "list of TAZ records", each returned 'TAZ' is a Python 'dict' containing
-# all of the keys (i.e., 'attributes') listed above. To convert such a list to a list of _only_ the TAZ IDs, call taz_ids
-# on the list of TAZ records.
 #
 class tazManager():
+"""
+class: tazManager
+
+Summary: The class "tazManager" provides a set of methods to perform _attribute_ queries
+         on an ESRI-format "Shapefile" that represents the TAZes in the model region.
+         The attributes are read from the Shapefile's .DBF file; other components of
+         the Shapefile are ignored.
+         
+The Shapefile's .DBF file _must_ contain the following attributes:
+1. id
+2. taz
+3. type - 'I' (internal) or 'E' (external)
+4. town
+5. state - state abbreviation, e.g., 'MA'
+6. town_state - town, state
+7. mpo - abbreviation of MPO name: 
+8. in_brmpo - 1 (yes) or 0 (no)
+9. subregion - abbreviation of Boston Region MPO subregion or NULL
+10. sector - 'analysis sector' as defined by Bill Kuttner.
+              Either 'Northeast', 'North', 'Northwest', 'West', 'Southwest',
+              'South', 'Southeast', 'Central' or ''; the empty string ('')
+              indicates that the TAZ is outsize of the 164 municipalities
+              comprising what was once known as the 'CTPS Model Region'.
+
+An object of class tazManager is instantiated by passing in the fully-qualified path
+to a Shapefile to the class constructor. Hence, it is possible to have more than one
+instance of this class active simultaneously, should this be needed.
+
+Note: For all of the above methods listed bleo that return a "list of TAZ records", 
+each returned 'TAZ' is a Python 'dict' containing all of the keys (i.e., 'attributes') listed above. 
+To convert such a list to a list of _only_ the TAZ IDs, call taz_ids on the list of TAZ records.
+"""
     _instance = None
     _default_base = r'G:/Data_Resources/modx/canonical_TAZ_shapefile/'
     _default_shapefile_fn = 'candidate_CTPS_TAZ_STATEWIDE_2019.shp'
@@ -179,18 +180,33 @@ class tazManager():
         return self._taz_table[index]
         
     def mpo_to_tazes(self, mpo):
+        """
+        mpo_to_tazes(mpo): Given the name (i.e., abbreviation) of an MPO,
+                           return a list of the records for the TAZes in it
+        """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['mpo'] == mpo)
         return retval
 
     def brmpo_tazes(self):
+        """
+        brmpo_tazes() - Return the list of the records for the TAZes in the Boston Region MPO
+        """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['in_brmpo'] == 1)
         return retval
 
     def brmpo_town_to_tazes(self, mpo_town):
+        """
+        brmpo_town_to_tazes(town) - Given the name of a town in the Boston Region MPO,
+                                    return a list of the records for the TAZes in it
+        """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['in_brmpo'] == 1 and x['town'] == mpo_town)
         return retval
 
     def brmpo_subregion_to_tazes(self, mpo_subregion):
+        """
+        brmpo_subregion_to_tazes(subregion) - Given the name (i.e., abbreviation) of a Boston Region MPO subregion,
+                                              return a list of the records for the TAZes in it
+        """
         # We have to be careful as some towns are in two subregions,
         # and for these the 'subregion' field of the table contains
         # an entry of the form 'SUBREGION_1/SUBREGION_2'.
@@ -211,29 +227,49 @@ class tazManager():
     # end_def mpo_subregion_to_tazes()
     
     def sector_to_tazes(self, sector):
+        """
+        sector_to_tazes - Given the name of an 'analysis sector', return the list of the records for the TAZes
+                          in the sector.
+        """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['sector'] == sector)
         return retval
     
     # Note: Returns TAZes in town _regardless_ of state.
     def town_to_tazes(self, town):
+        """
+         town_to_tazes(town) - Given the name of a town, return the list of the records for the TAZes in the town.
+                               Note: If a town with the same name occurs in more than one state, the  list of TAZes
+                               in _all_ such states is returned.
+        """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['town'] == town)
         return retval
 
     def town_state_to_tazes(self, town, state):
+        """
+        town_state_to_tazes(town, state) - Given a town and a state abbreviation (e.g., 'MA'),
+                                           return the list of records for the TAZes in the town.
+        """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['state'] == state and x['town'] == town)
         return retval
 
     def state_to_tazes(self, state):
+        """
+        state_to_tazes(state) - Given a state abbreviation, return the list of records for the TAZes in the state.
+        """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['state'] == state)
         return retval
         
     def taz_ids(self, taz_record_list):
+        """
+        taz_ids(TAZ_record_list) - Given a list of TAZ records, return a list of _only_ the TAZ IDs from those records.
+        """
         retval = []
         for taz in taz_record_list:
             retval.append(taz['id'])
         # end_for
         return retval
 # end_class tazManager
+
 
 ###############################################################################
 #
@@ -244,62 +280,65 @@ class tazManager():
 # -- B.K. 30 October 2021
 #
 _mode_to_metamode_mapping_table = {
-    1:  'MBTA Bus - Local Bus',
-    2:  'MBTA Bus - Inner Express Bus',
-    3:  'MBTA Bus - Outer Express Bus' ,
+    1:  'MBTA Bus',
+    2:  'MBTA Bus',
+    3:  'MBTA Bus' ,
     4:  'Green Line',
     5:  'Red Line',
     6:  'Mattapan Trolley',
     7:  'Orange Line',
     8:  'Blue Line',
-    9:  'Commuter Rail - Fairmount Line',
-    10: 'Ferries - Inner Harbor',
-    11: 'Ferries - Outer Harbor',
+    9:  'Commuter Rail',
+    10: 'Ferries',
+    11: 'Ferries',
     12: 'Silver Line',
     13: 'Sliver Line',
     14: 'Logan Express',
     15: 'Logan Shuttle',
     16: 'MGH and Other Shuttles',
-    17: 'RTA Bus - Brockton RTA',
-    18: 'RTA Bus - CATA RTA',
-    19: 'RTA Bus - GATRA RTA',
-    20: 'RTA Bus - Lowell RTA',
-    21: 'RTA Bus - Merrimack RTA',
-    22: 'RTA Bus - MetroWest RTA',
-    23: 'Private Bus - Bloom',
-    24: 'Private Bus - C & J Bus',
-    25: 'Private Bus - Cavalier Bus',
-    26: 'Private Bus - Concord Coach',
-    27: 'Private Bus - Dattco Bus',
-    28: 'Private Bus - Plymouth & Brockton',
-    29: 'Private Bus - Peter Pan',
+    17: 'RTA Bus',
+    18: 'RTA Bus',
+    19: 'RTA Bus',
+    20: 'RTA Bus',
+    21: 'RTA Bus',
+    22: 'RTA Bus',
+    23: 'Private Bus',
+    24: 'Private Bus',
+    25: 'Private Bus',
+    26: 'Private Bus',
+    27: 'Private Bus',
+    28: 'Private Bus',
+    29: 'Private Bus',
     30: 'Private Bus - Yankee',
     31: 'MBTA Subsidized Bus Routes',
-    32: 'Commuter Rail - Beverly / Newburyport / Rockport Line',
-    33: 'Commuter Rail - Stoughton / Providence Line',
-    34: 'Commuter Rail - Greenbush / Plymouth / Kingston / Middleborough Line',
-    35: 'Commuter Rail - Haverhill Line',
-    36: 'Commuter Rail - Lowell Line',
-    37: 'Commuter Rail - Fitchburg Line',
-    38: 'Commuter Rail - Framingham / Worcester Line',
-    39: 'Commuter Rail - Needham Line',
-    40: 'Commuter Rail - Franklin Line',
-    41: 'RTA Bus - SRTA RTA',
-    42: 'RTA Bus - Worcester RTA',
-    43: 'RTA Bus- Pioneer Valley RTA',
+    32: 'Commuter Rail',
+    33: 'Commuter Rail',
+    34: 'Commuter Rail',
+    35: 'Commuter Rail',
+    36: 'Commuter Rail',
+    37: 'Commuter Rail',
+    38: 'Commuter Rail',
+    39: 'Commuter Rail',
+    40: 'Commuter Rail',
+    41: 'RTA Bus',
+    42: 'RTA Bus',
+    43: 'RTA Bus',
     70: 'Walk' }
 
-# Function: mode_to_metamode
-#
-# Summary: Given one of the 50+ transportation "modes" supported by the TDM, return its "meta mode".
-#          For example, the model supports 3 different "modes" for MBTA bus routes; all three of 
-#          these have the common "metamode" of 'MBTA_Bus'.
-#
-# Parameters:  mode  String identifying one of the transporation "modes" supported by the TDM.
-#
-# Return value: String representing the input mode's "metamode."
-#
 def mode_to_metamode(mode):
+"""
+Function: mode_to_metamode
+
+Summary: Given one of the 50+ transportation "modes" supported by the TDM, return its "meta mode".
+         For example, the model supports 3 different "modes" for MBTA bus routes; all three of 
+         these have the common "metamode" of 'MBTA_Bus'.
+
+Args: mode: String identifying one of the transporation "modes" supported by the TDM.
+
+Returns: String representing the input mode's "metamode."
+
+Raises: N/A
+"""
     retval = 'None'
     if mode in _mode_to_metamode_mapping_table:
         return _mode_to_metamode_mapping_table[mode]
@@ -307,25 +346,28 @@ def mode_to_metamode(mode):
     return retval
 # mode_to_metamode()
 
-
-# calculate_total_daily_boardings: Calculate the daily total across all time periods.
-#
-#    This calculation requires a bit of subtelty, because the number of rows in the four
-#    data frames produced by produced in the calling function is NOT necessarily the same. 
-#    A brute-force apporach will not work, generally speaking.
-#    See comments in the code below for details.
-#
-# NOTE: This is a helper function for import_transit_assignment (q.v.)
-#   
-# Parameter: boardings_by_tod - a dict with the keys 'AM', 'MD', 'PM', and 'NT'
-#            for which the value of each key is a data frame containing the total
-#            boardings for the list of routes specified in the input CSV file.
-#
-# Return value: The input dict (boardings_by_tod) with an additional key 'daily'
-#               the value of which is a dataframe with the total daily boardings
-#               for all routes specified in the input CSV across all 4 time periods.
-#
 def calculate_total_daily_boardings(boardings_by_tod):
+"""
+Function: calculate_total_daily_boardings
+
+Summary: Calculate the daily total boardings across all time periods.
+This calculation requires a bit of subtelty, because the number of rows in the four
+data frames produced by produced in the calling function is NOT necessarily the same. 
+A brute-force apporach will not work, generally speaking.
+See comments in the code below for details.
+
+NOTE: This is a helper function for import_transit_assignment (q.v.)
+  
+Args: boardings_by_tod: a dict with the keys 'AM', 'MD', 'PM', and 'NT'
+      for which the value of each key is a data frame containing the total
+      boardings for the list of routes specified in the input CSV file.
+
+Returns: The input dict (boardings_by_tod) with an additional key 'daily'
+         the value of which is a dataframe with the total daily boardings
+         for all routes specified in the input CSV across all 4 time periods.
+
+Raises: N/A
+"""
     am_results = boardings_by_tod['AM']
     md_results = boardings_by_tod['MD']
     pm_results = boardings_by_tod['PM']
@@ -425,27 +467,42 @@ def calculate_total_daily_boardings(boardings_by_tod):
     return boardings_by_tod
 # end_def calculate_total_daily_boardings()
 
-# import_transit_assignment: Import transit assignment result CSV files for a given scenario.
-#
-# 1. Read all CSV files for each time period ('tod'), and caclculate the sums for each time period.
-#    Step 1 can be performed as a brute-force sum across all columns, since the number of rows in
-#    the CSVs (and thus the dataframes) for any given time period are all the same.
-#
-# 2. Calculate the daily total across all time periods.
-#    Step 2 requires a bit of subtelty, because the number of rows in the data frames produced in 
-#    Step 1 is NOT necessarily the same. A brute-force apporach will not work, generally speaking.
-#    See comments in the code below for details.
-#    NOTE: This step is performed by the helper function calculate_total_daily_boardings.
-#
-# 3. Return value: a dict of the form:
-#    {'AM'    : dataframe with totals for the AM period,
-#     'MD'    : datafrme with totals for the MD period,
-#     'PM'    : dataframe with totals for the PM period,
-#     'NT'    : dataframe with totals for the NT period,
-#     'daily' : dataframe with totals for the entire day
-#   }
-# 
 def import_transit_assignment(scenario):
+"""
+Function: import_transit_assignment
+
+Summary:  Import transit assignment result CSV files for a given scenario.
+
+1. Read all CSV files for each time period ('tod'), and caclculate the sums for each time period.
+   Step 1 can be performed as a brute-force sum across all columns, since the number of rows in
+   the CSVs (and thus the dataframes) for any given time period are all the same.
+
+2. Calculate the daily total across all time periods.
+   Step 2 requires a bit of subtelty, because the number of rows in the data frames produced in 
+   Step 1 is NOT necessarily the same. A brute-force apporach will not work, generally speaking.
+   See comments in the code below for details.
+   NOTE: This step is performed by the helper function calculate_total_daily_boardings.
+
+3. Return value: a dict of the form:
+   {'AM'    : dataframe with totals for the AM period,
+    'MD'    : datafrme with totals for the MD period,
+    'PM'    : dataframe with totals for the PM period,
+    'NT'    : dataframe with totals for the NT period,
+    'daily' : dataframe with totals for the entire day
+  }
+
+Args: scenario: path to directory containing transit assignment results in CSV file format
+
+Returns: a dict of the form:
+   		{ 'AM'    : dataframe with totals for the AM period,
+    		  'MD'    : datafrme with totals for the MD period,
+    		  'PM'    : dataframe with totals for the PM period,
+    		  'NT'    : dataframe with totals for the NT period,
+    		  'daily' : dataframe with totals for the entire day
+		}
+
+Raises: N/A
+"""
     base = scenario + r'out/'
     tods = ["AM", "MD", "PM", "NT"]
     # At the end of execution of this function, the dictionary variable'TODsums' will contain all the TOD summed results:
@@ -488,65 +545,49 @@ def import_transit_assignment(scenario):
 #
 # Section 4: Dataframe and Geo-dataframe utilities
 #
-
-# Function: export_df_to_csv
-#
-# Summary: Export columns in a dataframe to a CSV file.
-#          If a list of columns to export isn't specified, export all columns.
-#
-# Parameters:   dataframe  -  Pandas dataframe
-#               csv_fn      - Name of CSV file
-#               column_list - List of columns to export, or None
-#
-# Return value: N/A
-#
 def export_df_to_csv(dataframe, csv_fn, column_list=None):
+"""
+Function: export_df_to_csv
+
+Summary: Export columns in a dataframe to a CSV file.
+         If a list of columns to export isn't specified, export all columns.
+
+Args: dataframe: Pandas dataframe
+      csv_fn: Name of CSV file
+      column_list: List of columns to export, or None
+
+Returns: N/A
+
+Raises: N/A
+"""
     if column_list != None:
         dataframe.to_csv(csv_fn, column_list, sep=',')
     else:
         dataframe.to_csv(csv_fn, sep=',')
 # end_def
 
-# Function: export_gdf_to_geojson
-#
-# Summary: Export a GeoPandas gdataframe to a GeoJSON file.
-#
-# Parameters:   geo_dataframe  - GeoPandas dataframe
-#               geojson_fn     - Name of GeoJSON file
-#
-# Return value: N/A
-#
 def export_gdf_to_geojson(geo_dataframe, geojson_fn):
         geo_dataframe.to_file(geojson_fn, driver='GeoJSON')
 # end_def
 
-# Function: export_gdf_to_shapefile
-#
-# Summary: Export a GeoPandas gdataframe to an ESRI-format shapefile
-#
-# Parameters:   geo_dataframe  - GeoPandas dataframe
-#               geojson_fn     - Name of shapefile
-#
-# Note: Attribute (property) names longer than 10 characters will be truncated,
-#       due to the limitations of the DBF file used for Shapefile attributes.
-#
-# Return value: N/A
-#
 def export_gdf_to_shapefile(geo_dataframe, shapefile_fn):
         geo_dataframe.to_file(shapefile_fn, driver='ESRI Shapefile')
 # end_def
 
-# Function: bbox_of_gdf
-#
-# Summary: Return the bounding box of all the features in a geo-dataframe.
-#
-# Parameters:   gdf - a GeoPandas dataframe
-#
-# Return value: Bounding box of all the features in the input geodataframe.
-#               The bounding box is returned as a dictionary with the keys: 
-#               { 'minx', 'miny', 'maxx', 'maxy'}.
-# 
 def bbox_of_gdf(gdf):
+"""
+Function: bbox_of_gdf
+
+Summary: Return the bounding box of all the features in a geo-dataframe.
+
+Args: gdf: a GeoPandas geo-dataframe
+
+Returns: Bounding box of all the features in the input geodataframe.
+         The bounding box is returned as a dictionary with the keys: 
+         { 'minx', 'miny', 'maxx', 'maxy'}.
+
+Raises: N/A
+"""
     bounds_tuples = gdf['geometry'].map(lambda x: x.bounds)
     bounds_dicts = []
     for t in bounds_tuples:
@@ -562,15 +603,18 @@ def bbox_of_gdf(gdf):
     return retval
 # end_def bbox_of_gdf()
 
-# Function: center_of_bbox
-#
-# Summary:  Given a geomtric "bounding box", return its center point. 
-#
-# Parameters: bbox - Bounding box in the form of a dictionary with the keys { 'minx', 'miny', 'maxx', 'maxy'}
-#
-# Return value: Center point of the bounding box as a dictionary with the keys { 'x' , 'y' }.
-#
 def center_of_bbox(bbox):
+"""
+Function: center_of_bbox
+
+Summary: Given a geomtric "bounding box", return its center point. 
+
+Args: bbox: Bounding box in the form of a dictionary with the keys { 'minx', 'miny', 'maxx', 'maxy'}
+
+Returns: Center point of the bounding box as a dictionary with the keys { 'x' , 'y' }.
+
+Raises: N/A
+"""
     center_x = bbox['minx'] + (bbox['maxx'] - bbox['minx']) / 2
     center_y = bbox['miny'] + (bbox['maxy'] - bbox['miny']) / 2
     retval = { 'x' : center_x, 'y' : center_y }
