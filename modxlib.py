@@ -26,7 +26,7 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.2.2"
+_version = "0.2.3"
 def get_version():
     return _version
 # end_def
@@ -275,10 +275,17 @@ class tazManager():
 #
 # Section 3: Miscellaneous utilities for the transit mode
 #
-# NOTE: Everything in Section 3 is specific to TDM19, and should only be used with TDM19 data.
-#       These routines will be changed to accord with how transit data is organized in TDM23.
-# -- B.K. 30 October 2021
+# NOTE: Much of the contnets Section 3 is specific to TDM19, and should only be used with TDM19 data.
+#       The relevant TDM19-specific portions of Section 3 are clearly marked with the comment
+#          *** TDM19-specific code
+#       These will be changed to accord with how transit data is organized in TDM23, when this has 
+#       become sufficiently well-defined.
 #
+# -- B.K. 04 November 2021
+
+# *** TDM19-specific code
+# he mode-to-metamode mapping machinery is specific to TDM19.
+# It may well not be required at all in TDM23.
 _mode_to_metamode_mapping_table = {
     1:  'MBTA Bus',
     2:  'MBTA Bus',
@@ -324,7 +331,8 @@ _mode_to_metamode_mapping_table = {
     42: 'RTA Bus',
     43: 'RTA Bus',
     70: 'Walk' }
-
+	
+# *** TDM19-Specific code
 def mode_to_metamode(mode):
     """
     Function: mode_to_metamode
@@ -345,199 +353,214 @@ def mode_to_metamode(mode):
     # end_if
     return retval
 # mode_to_metamode()
+# *** END of TDM19-specific code
 
-def calculate_total_daily_boardings(boardings_by_tod):
-    """
-    Function: calculate_total_daily_boardings
+class TransitBoardingsMgr():
+	"""
+	TransitBoardingsMgr - class to manage transit boardings data (a.k.a. "transit assignment" data)
+	"""
+	def calculate_total_daily_boardings(self, boardings_by_tod):
+		"""
+		Function: calculate_total_daily_boardings
 
-    Summary: Calculate the daily total boardings across all time periods.
-    This calculation requires a bit of subtelty, because the number of rows in the four
-    data frames produced by produced in the calling function is NOT necessarily the same. 
-    A brute-force apporach will not work, generally speaking.
-    See comments in the code below for details.
+		Summary: Calculate the daily total boardings across all time periods.
+		This calculation requires a bit of subtelty, because the number of rows in the four
+		data frames produced by produced in the calling function is NOT necessarily the same. 
+		A brute-force apporach will not work, generally speaking.
+		See comments in the code below for details.
 
-    NOTE: This is a helper function for import_transit_assignment (q.v.)
-      
-    Args: boardings_by_tod: a dict with the keys 'AM', 'MD', 'PM', and 'NT'
-          for which the value of each key is a data frame containing the total
-          boardings for the list of routes specified in the input CSV file.
+		NOTE: This is a helper function for import_transit_assignment (q.v.)
+		  
+		Args: boardings_by_tod: a dict with the keys 'AM', 'MD', 'PM', and 'NT'
+			  for which the value of each key is a data frame containing the total
+			  boardings for the list of routes specified in the input CSV file.
 
-    Returns: The input dict (boardings_by_tod) with an additional key 'daily'
-             the value of which is a dataframe with the total daily boardings
-             for all routes specified in the input CSV across all 4 time periods.
+		Returns: The input dict (boardings_by_tod) with an additional key 'daily'
+				 the value of which is a dataframe with the total daily boardings
+				 for all routes specified in the input CSV across all 4 time periods.
 
-    Raises: N/A
-    """
-    am_results = boardings_by_tod['AM']
-    md_results = boardings_by_tod['MD']
-    pm_results = boardings_by_tod['PM']
-    nt_results = boardings_by_tod['NT']
-    
-    # Compute the daily sums.
-    #
-    # Step 1: Join 'am' and 'md' dataframes
-    j1 = pd.merge(am_results, md_results, on=['ROUTE', 'STOP'], how='outer', suffixes=('_am', '_md'))
-    # Step 1.1 Replace NaN's with 0's
-    j1 = j1.fillna(0)
+		Raises: N/A
+		"""
+		am_results = boardings_by_tod['AM']
+		md_results = boardings_by_tod['MD']
+		pm_results = boardings_by_tod['PM']
+		nt_results = boardings_by_tod['NT']
+		
+		# Compute the daily sums.
+		#
+		# Step 1: Join 'am' and 'md' dataframes
+		j1 = pd.merge(am_results, md_results, on=['ROUTE', 'STOP'], how='outer', suffixes=('_am', '_md'))
+		# Step 1.1 Replace NaN's with 0's
+		j1 = j1.fillna(0)
 
-    # Step 1.2 Compute the 'AM' + 'MD' sums
-    j1['DirectTransferOff'] = j1['DirectTransferOff_am'] + j1['DirectTransferOff_md']
-    j1['DirectTransferOn'] = j1['DirectTransferOn_am'] + j1['DirectTransferOn_md']
-    j1['DriveAccessOn'] = j1['DriveAccessOn_am'] + j1['DriveAccessOn_md']
-    j1['EgressOff'] = j1['EgressOff_am'] + j1['EgressOff_md']
-    j1['Off'] = j1['Off_am'] + j1['Off_md']
-    j1['On'] = j1['On_am'] + j1['On_md']
-    j1['WalkAccessOn'] = j1['WalkAccessOn_am'] + j1['WalkAccessOn_md'] 
-    j1['WalkTransferOff'] = j1['WalkTransferOff_am'] + j1['WalkTransferOff_md']
-    j1['WalkTransferOn'] = j1['WalkTransferOn_am'] + j1['WalkTransferOn_md']
+		# Step 1.2 Compute the 'AM' + 'MD' sums
+		j1['DirectTransferOff'] = j1['DirectTransferOff_am'] + j1['DirectTransferOff_md']
+		j1['DirectTransferOn'] = j1['DirectTransferOn_am'] + j1['DirectTransferOn_md']
+		j1['DriveAccessOn'] = j1['DriveAccessOn_am'] + j1['DriveAccessOn_md']
+		j1['EgressOff'] = j1['EgressOff_am'] + j1['EgressOff_md']
+		j1['Off'] = j1['Off_am'] + j1['Off_md']
+		j1['On'] = j1['On_am'] + j1['On_md']
+		j1['WalkAccessOn'] = j1['WalkAccessOn_am'] + j1['WalkAccessOn_md'] 
+		j1['WalkTransferOff'] = j1['WalkTransferOff_am'] + j1['WalkTransferOff_md']
+		j1['WalkTransferOn'] = j1['WalkTransferOn_am'] + j1['WalkTransferOn_md']
 
-    # Step 1.3: Drop un-needed columns
-    cols_to_drop = ['DirectTransferOff_am', 'DirectTransferOff_md',
-                    'DirectTransferOn_am', 'DirectTransferOn_md',
-                    'DriveAccessOn_am', 'DriveAccessOn_md',
-                    'EgressOff_am','EgressOff_md',
-                    'Off_am', 'Off_md',
-                    'On_am', 'On_md',
-                    'WalkAccessOn_am', 'WalkAccessOn_md',
-                    'WalkTransferOff_am', 'WalkTransferOff_md',
-                    'WalkTransferOn_am', 'WalkTransferOn_md'
-                    ]
-    j1 = j1.drop(columns=cols_to_drop)
+		# Step 1.3: Drop un-needed columns
+		cols_to_drop = ['DirectTransferOff_am', 'DirectTransferOff_md',
+						'DirectTransferOn_am', 'DirectTransferOn_md',
+						'DriveAccessOn_am', 'DriveAccessOn_md',
+						'EgressOff_am','EgressOff_md',
+						'Off_am', 'Off_md',
+						'On_am', 'On_md',
+						'WalkAccessOn_am', 'WalkAccessOn_md',
+						'WalkTransferOff_am', 'WalkTransferOff_md',
+						'WalkTransferOn_am', 'WalkTransferOn_md'
+						]
+		j1 = j1.drop(columns=cols_to_drop)
 
-    # Step 2: j2 - join 'pm' and 'nt' data frames
-    j2 = pd.merge(pm_results, nt_results, on=['ROUTE', 'STOP'], how='outer', suffixes=('_pm', '_nt'))
-    # Step 2.1: Replace NaN's with 0's
-    j2 = j2.fillna(0)
+		# Step 2: j2 - join 'pm' and 'nt' data frames
+		j2 = pd.merge(pm_results, nt_results, on=['ROUTE', 'STOP'], how='outer', suffixes=('_pm', '_nt'))
+		# Step 2.1: Replace NaN's with 0's
+		j2 = j2.fillna(0)
 
-    # Step 2.2: Compute the 'PM' + 'NT' sums
-    j2['DirectTransferOff'] = j2['DirectTransferOff_pm'] + j2['DirectTransferOff_nt']
-    j2['DirectTransferOn'] = j2['DirectTransferOn_pm'] + j2['DirectTransferOn_nt']
-    j2['DriveAccessOn'] = j2['DriveAccessOn_pm'] + j2['DriveAccessOn_nt']
-    j2['EgressOff'] = j2['EgressOff_pm'] + j2['EgressOff_nt']
-    j2['Off'] = j2['Off_pm'] + j2['Off_nt']
-    j2['On'] = j2['On_pm'] + j2['On_nt']
-    j2['WalkAccessOn'] = j2['WalkAccessOn_pm'] + j2['WalkAccessOn_nt'] 
-    j2['WalkTransferOff'] = j2['WalkTransferOff_pm'] + j2['WalkTransferOff_nt']
-    j2['WalkTransferOn'] = j2['WalkTransferOn_pm'] + j2['WalkTransferOn_nt']
+		# Step 2.2: Compute the 'PM' + 'NT' sums
+		j2['DirectTransferOff'] = j2['DirectTransferOff_pm'] + j2['DirectTransferOff_nt']
+		j2['DirectTransferOn'] = j2['DirectTransferOn_pm'] + j2['DirectTransferOn_nt']
+		j2['DriveAccessOn'] = j2['DriveAccessOn_pm'] + j2['DriveAccessOn_nt']
+		j2['EgressOff'] = j2['EgressOff_pm'] + j2['EgressOff_nt']
+		j2['Off'] = j2['Off_pm'] + j2['Off_nt']
+		j2['On'] = j2['On_pm'] + j2['On_nt']
+		j2['WalkAccessOn'] = j2['WalkAccessOn_pm'] + j2['WalkAccessOn_nt'] 
+		j2['WalkTransferOff'] = j2['WalkTransferOff_pm'] + j2['WalkTransferOff_nt']
+		j2['WalkTransferOn'] = j2['WalkTransferOn_pm'] + j2['WalkTransferOn_nt']
 
-    # Step 2.3: Drop un-needed columns
-    cols_to_drop = ['DirectTransferOff_pm', 'DirectTransferOff_nt',
-                    'DirectTransferOn_pm', 'DirectTransferOn_nt',
-                    'DriveAccessOn_pm', 'DriveAccessOn_nt',
-                    'EgressOff_pm','EgressOff_nt',
-                    'Off_pm', 'Off_nt',
-                    'On_pm', 'On_nt',
-                    'WalkAccessOn_pm', 'WalkAccessOn_nt',
-                    'WalkTransferOff_pm', 'WalkTransferOff_nt',
-                    'WalkTransferOn_pm', 'WalkTransferOn_nt'
-                    ]
-    j2 = j2.drop(columns=cols_to_drop)
+		# Step 2.3: Drop un-needed columns
+		cols_to_drop = ['DirectTransferOff_pm', 'DirectTransferOff_nt',
+						'DirectTransferOn_pm', 'DirectTransferOn_nt',
+						'DriveAccessOn_pm', 'DriveAccessOn_nt',
+						'EgressOff_pm','EgressOff_nt',
+						'Off_pm', 'Off_nt',
+						'On_pm', 'On_nt',
+						'WalkAccessOn_pm', 'WalkAccessOn_nt',
+						'WalkTransferOff_pm', 'WalkTransferOff_nt',
+						'WalkTransferOn_pm', 'WalkTransferOn_nt'
+						]
+		j2 = j2.drop(columns=cols_to_drop)
 
-    # Step 3: Join "j1" and "j2" to produce a dataframe with the daily totals
-    daily_df = pd.merge(j1, j2, on=['ROUTE', 'STOP'], how='outer', suffixes=('_j1', '_j2'))
-    # Step 3.1 : Replace any NaN's with 0's. This line _shouldn't_ be needed - just being extra cautious.
-    daily_df = daily_df.fillna(0)
+		# Step 3: Join "j1" and "j2" to produce a dataframe with the daily totals
+		daily_df = pd.merge(j1, j2, on=['ROUTE', 'STOP'], how='outer', suffixes=('_j1', '_j2'))
+		# Step 3.1 : Replace any NaN's with 0's. This line _shouldn't_ be needed - just being extra cautious.
+		daily_df = daily_df.fillna(0)
 
-    # Step 3.2 : Compute THE daily sums
-    daily_df['DirectTransferOff'] = daily_df['DirectTransferOff_j1'] + daily_df['DirectTransferOff_j2']
-    daily_df['DirectTransferOn'] = daily_df['DirectTransferOn_j1'] + daily_df['DirectTransferOn_j2']
-    daily_df['DriveAccessOn'] = daily_df['DriveAccessOn_j1'] + daily_df['DriveAccessOn_j2']
-    daily_df['EgressOff'] = daily_df['EgressOff_j1'] + daily_df['EgressOff_j2']
-    daily_df['Off'] = daily_df['Off_j1'] + daily_df['Off_j2']
-    daily_df['On'] = daily_df['On_j1'] + daily_df['On_j2']
-    daily_df['WalkAccessOn'] = daily_df['WalkAccessOn_j1'] + daily_df['WalkAccessOn_j2'] 
-    daily_df['WalkTransferOff'] = daily_df['WalkTransferOff_j1'] + daily_df['WalkTransferOff_j2']
-    daily_df['WalkTransferOn'] = daily_df['WalkTransferOn_j1'] + daily_df['WalkTransferOn_j2']
+		# Step 3.2 : Compute THE daily sums
+		daily_df['DirectTransferOff'] = daily_df['DirectTransferOff_j1'] + daily_df['DirectTransferOff_j2']
+		daily_df['DirectTransferOn'] = daily_df['DirectTransferOn_j1'] + daily_df['DirectTransferOn_j2']
+		daily_df['DriveAccessOn'] = daily_df['DriveAccessOn_j1'] + daily_df['DriveAccessOn_j2']
+		daily_df['EgressOff'] = daily_df['EgressOff_j1'] + daily_df['EgressOff_j2']
+		daily_df['Off'] = daily_df['Off_j1'] + daily_df['Off_j2']
+		daily_df['On'] = daily_df['On_j1'] + daily_df['On_j2']
+		daily_df['WalkAccessOn'] = daily_df['WalkAccessOn_j1'] + daily_df['WalkAccessOn_j2'] 
+		daily_df['WalkTransferOff'] = daily_df['WalkTransferOff_j1'] + daily_df['WalkTransferOff_j2']
+		daily_df['WalkTransferOn'] = daily_df['WalkTransferOn_j1'] + daily_df['WalkTransferOn_j2']
 
-    # Step 3.3 : Drop un-needed columns
-    cols_to_drop = ['DirectTransferOff_j1', 'DirectTransferOff_j2',
-                    'DirectTransferOn_j1', 'DirectTransferOn_j2',
-                    'DriveAccessOn_j1', 'DriveAccessOn_j2',
-                    'EgressOff_j1','EgressOff_j2',
-                    'Off_j1', 'Off_j2',
-                    'On_j1', 'On_j2',
-                    'WalkAccessOn_j1', 'WalkAccessOn_j2',
-                    'WalkTransferOff_j1', 'WalkTransferOff_j2',
-                    'WalkTransferOn_j1', 'WalkTransferOn_j2'
-                    ]
-    daily_df = daily_df.drop(columns=cols_to_drop)
+		# Step 3.3 : Drop un-needed columns
+		cols_to_drop = ['DirectTransferOff_j1', 'DirectTransferOff_j2',
+						'DirectTransferOn_j1', 'DirectTransferOn_j2',
+						'DriveAccessOn_j1', 'DriveAccessOn_j2',
+						'EgressOff_j1','EgressOff_j2',
+						'Off_j1', 'Off_j2',
+						'On_j1', 'On_j2',
+						'WalkAccessOn_j1', 'WalkAccessOn_j2',
+						'WalkTransferOff_j1', 'WalkTransferOff_j2',
+						'WalkTransferOn_j1', 'WalkTransferOn_j2'
+						]
+		daily_df = daily_df.drop(columns=cols_to_drop)
 
-    # Finally, we've got the 'daily' total dataframe!
-    boardings_by_tod['daily'] = daily_df
-    return boardings_by_tod
-# end_def calculate_total_daily_boardings()
+		# Finally, we've got the 'daily' total dataframe!
+		boardings_by_tod['daily'] = daily_df
+		return boardings_by_tod
+		
+	# end_def calculate_total_daily_boardings()
+	
+	def import_transit_assignment(self, scenario):
+		"""
+		Function: import_transit_assignment
+		
+		NOTE: This method _should_ work equally well for TDM19 and TDM23.
+		      Under TDM19, the directory containing the output CSVs may (and often does)
+			  contain multiple CSVs per mode; under TMD23, it will contain only one CSV
+			  file per mode. The code will work equally well in both cases.
+			  For TDM23, some change to the location of the directory containing the 
+			  CSV files may be required.
 
-def import_transit_assignment(scenario):
-    """
-    Function: import_transit_assignment
+		Summary:  Import transit assignment result CSV files for a given scenario.
 
-    Summary:  Import transit assignment result CSV files for a given scenario.
+		1. Read all CSV files for each time period ('tod'), and caclculate the sums for each time period.
+		   Step 1 can be performed as a brute-force sum across all columns, since the number of rows in
+		   the CSVs (and thus the dataframes) for any given time period are all the same.
 
-    1. Read all CSV files for each time period ('tod'), and caclculate the sums for each time period.
-       Step 1 can be performed as a brute-force sum across all columns, since the number of rows in
-       the CSVs (and thus the dataframes) for any given time period are all the same.
+		2. Calculate the daily total across all time periods.
+		   Step 2 requires a bit of subtelty, because the number of rows in the data frames produced in 
+		   Step 1 is NOT necessarily the same. A brute-force apporach will not work, generally speaking.
+		   See comments in the code below for details.
+		   NOTE: This step is performed by the helper function calculate_total_daily_boardings.
 
-    2. Calculate the daily total across all time periods.
-       Step 2 requires a bit of subtelty, because the number of rows in the data frames produced in 
-       Step 1 is NOT necessarily the same. A brute-force apporach will not work, generally speaking.
-       See comments in the code below for details.
-       NOTE: This step is performed by the helper function calculate_total_daily_boardings.
+		3. Return value: a dict of the form:
+		   {'AM'    : dataframe with totals for the AM period,
+			'MD'    : datafrme with totals for the MD period,
+			'PM'    : dataframe with totals for the PM period,
+			'NT'    : dataframe with totals for the NT period,
+			'daily' : dataframe with totals for the entire day
+		  }
 
-    3. Return value: a dict of the form:
-       {'AM'    : dataframe with totals for the AM period,
-        'MD'    : datafrme with totals for the MD period,
-        'PM'    : dataframe with totals for the PM period,
-        'NT'    : dataframe with totals for the NT period,
-        'daily' : dataframe with totals for the entire day
-      }
+		Args: scenario: path to directory containing transit assignment results in CSV file format
 
-    Args: scenario: path to directory containing transit assignment results in CSV file format
+		Returns: a dict of the form:
+				{ 'AM'    : dataframe with totals for the AM period,
+				  'MD'    : datafrme with totals for the MD period,
+				  'PM'    : dataframe with totals for the PM period,
+				  'NT'    : dataframe with totals for the NT period,
+				  'daily' : dataframe with totals for the entire day
+				}
 
-    Returns: a dict of the form:
-            { 'AM'    : dataframe with totals for the AM period,
-                  'MD'    : datafrme with totals for the MD period,
-                  'PM'    : dataframe with totals for the PM period,
-                  'NT'    : dataframe with totals for the NT period,
-                  'daily' : dataframe with totals for the entire day
-            }
+		Raises: N/A
+		"""
+		base = scenario + r'out/'
+		tods = ["AM", "MD", "PM", "NT"]
+		# At the end of execution of this function, the dictionary variable'TODsums' will contain all the TOD summed results:
+		# one key-value-pair for each 'tod' AND the 'daily' total as well.
+			
+		# The dict 'TODsums' is the return value of this function.
+		TODsums = { 'AM' : None, 'MD' : None, 'PM' : None, 'NT' : None }
 
-    Raises: N/A
-    """
-    base = scenario + r'out/'
-    tods = ["AM", "MD", "PM", "NT"]
-    # At the end of execution of this function, the dictionary variable'TODsums' will contain all the TOD summed results:
-    # one key-value-pair for each 'tod' AND the 'daily' total as well.
-    
-    # The dict 'TODsums' is the return value of this function.
-    TODsums = { 'AM' : None, 'MD' : None, 'PM' : None, 'NT' : None }
+		# Import CSV files and create sum tables for each T-O-D (a.k.a. 'time period').
+		for tod in tods:
+			# Get full paths to _all_ CSV files for the current t-o-d.
+			x = tod + '/' 
+			fq_csv_fns = glob.glob(os.path.join(base,x,r'*.csv'))
+			
+			# 'tablist' : List of all the dataframes created from reading in the all the CSV files for the current t-o-d
+			tablist = []
+			for csv_file in fq_csv_fns:
+				# Read CSV file into dataframe, set indices, and append to 'tablist'
+				tablist.append(pd.read_csv(csv_file).set_index(['ROUTE','STOP']))
+			#
+	  
+			# Sum the tables for the current TOD
+			TODsums[tod] = reduce(lambda a, b: a.add(b, fill_value=0), tablist)
+		# end_for over all tod's
 
-    # Import CSV files and create sum tables for each T-O-D (a.k.a. 'time period').
-    for tod in tods:
-        # Get full paths to _all_ CSV files for the current t-o-d.
-        x = tod + '/' 
-        fq_csv_fns = glob.glob(os.path.join(base,x,r'*.csv'))
-        
-        # 'tablist' : List of all the dataframes created from reading in the all the CSV files for the current t-o-d
-        tablist = []
-        for csv_file in fq_csv_fns:
-            # Read CSV file into dataframe, set indices, and append to 'tablist'
-            tablist.append(pd.read_csv(csv_file).set_index(['ROUTE','STOP']))
-        #
-  
-        # Sum the tables for the current TOD
-        TODsums[tod] = reduce(lambda a, b: a.add(b, fill_value=0), tablist)
-    # end_for over all tod's
+		TODsums =  calculate_total_daily_boardings(TODsums)
+		
+		# Ensure that the ROUTE and STOP columns of each dataframe in TODsums aren't indices.
+		for k in TODsums.keys():
+			TODsums[k] = TODsums[k].reset_index()
+		#
+		return TODsums
+	# end_def import_transit_assignment()
+# end_class TransitBoardingsMgr
 
-    TODsums =  calculate_total_daily_boardings(TODsums)
-    
-    # Ensure that the ROUTE and STOP columns of each dataframe in TODsums aren't indices.
-    for k in TODsums.keys():
-        TODsums[k] = TODsums[k].reset_index()
-    #
-    return TODsums
-# end_def import_transit_assignment()
 #
-# END of Section 3: Utilities for the transit mode - specific to TDM19.
+# END of Section 3: Utilities for the transit mode
 ###############################################################################
 
 
@@ -607,9 +630,10 @@ def center_of_bbox(bbox):
     """
     Function: center_of_bbox
 
-    Summary: Given a geomtric "bounding box", return its center point. 
+    Summary: Given a geometric "bounding box", return its center point. 
 
-    Args: bbox: Bounding box in the form of a dictionary with the keys { 'minx', 'miny', 'maxx', 'maxy'}
+    Args: bbox: Bounding box in the form of a dictionary with the keys { 'minx', 'miny', 'maxx', 'maxy' },
+	            e.g., one returned by bbox_of_gdf.
 
     Returns: Center point of the bounding box as a dictionary with the keys { 'x' , 'y' }.
 
