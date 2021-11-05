@@ -95,35 +95,35 @@ class TripTableMgr_TDM19(TripTableMgr):
         return tt_omxs
     #
     def load_trip_tables(self, tt_omxs, modes=None):
-    """
-    Function: load_trip_tables - TDM19 implementation
+        """
+        Function: load_trip_tables - TDM19 implementation
 
-    Summary: Load the trip tables for all time periods the specified list of modes from
-             open OMX files into NumPy arrays.
-             If no list of modes is passed, trip tables for all modes will be returned.
+        Summary: Load the trip tables for all time periods the specified list of modes from
+                 open OMX files into NumPy arrays.
+                 If no list of modes is passed, trip tables for all modes will be returned.
 
-    Args: tt_omxs: Dictionary, keyed by time period identifier ('am', 'md', 'pm', and 'nt'),
-                   each of whose values is the open OMX trip table file for the corresponding
-                   time period.
-           modes: List of modes (strings) or None
+        Args: tt_omxs: Dictionary, keyed by time period identifier ('am', 'md', 'pm', and 'nt'),
+                       each of whose values is the open OMX trip table file for the corresponding
+                       time period.
+               modes: List of modes (strings) or None
 
-    Returns: A two-level dictionary (i.e., first level = time period, second level = mode)
-             the second level of which contain the trip table, in the form of a numPy array,
-             for the [time_period][mode] in question.
+        Returns: A two-level dictionary (i.e., first level = time period, second level = mode)
+                 the second level of which contain the trip table, in the form of a numPy array,
+                 for the [time_period][mode] in question.
 
-    Raises: N/A
-    """ 
-    if modes == None:
-        modes = self._all_modes
-    #
-    retval  = { 'am' : {}, 'md' : {}, 'pm' : {}, 'nt' : {} }
-    for period in self._all_time_periods:
-        for mode in modes:
-            temp = tt_omxs[period][mode]
-            retval[period][mode] = np.array(temp)
+        Raises: N/A
+        """
+        if modes == None:
+            modes = self._all_modes
+        #
+        retval  = { 'am' : {}, 'md' : {}, 'pm' : {}, 'nt' : {} }
+        for period in self._all_time_periods:
+            for mode in modes:
+                temp = tt_omxs[period][mode]
+                retval[period][mode] = np.array(temp)
+            # end_for
         # end_for
-    # end_for
-    return retval
+        return retval
     #
 # class TripTableMgr_TDM19
 
@@ -131,6 +131,9 @@ class TripTableMgr_TDM23(TripTableMgr):
     """ 
     Class for TDM23-specific class for trip table utilities
     """
+    _veh_modes = [ 'sov', 'how', 'ltrk', 'mtrk', 'htrk' ]
+    _per_modes = [ 'auto', 'nonm', 'ta_acc', 'ta_egr', 'tw' ]
+    _all_modes = _veh_modes + _per_modes
     def __init__(self):
         TripTableMgr.__init__(self, "tdm23")
     #
@@ -176,9 +179,25 @@ class TripTableMgr_TDM23(TripTableMgr):
         return tt_omxs
     #
     #
-    def load_trip_tables(tt_omxs, modes=None):
-        # stub for now
-        pass
+    def load_trip_tables(tt_omxs, veh_modes=None, per_modes=None):
+        if veh_modes == None:
+            veh_modes = self._veh_modes
+        #
+        if per_modes == None:
+            per_modes = self._per_modes
+        #
+        retval  = { 'am' : {}, 'md' : {}, 'pm' : {}, 'nt' : {} }
+        for period in self._all_time_periods:
+            for mode in veh_modes:
+                temp = tt_omxs[period]['veh'][mode]
+                retval[period][mode] = np.array(temp)
+            # end_for
+            for mode in per_modes:
+                temp = tt_omxs[period]['per'][mode]
+                retval[period][mode] = np.array(temp)
+            # end_for
+        # end_for
+        return retval
     #
 # class TripTableMgr_TDM23
 
