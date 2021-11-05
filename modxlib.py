@@ -38,6 +38,56 @@ def get_version():
 #
 # Section 1: Trip table management
 #
+class TripTableMgr():
+    """ 
+    Abstract base class for TDM-version specific class for trip table utilities
+    """
+    tdm_version = ''
+    def __init__(self, version_string):
+        self.tdm_version = version_string
+    #
+    def display_version(self):
+        print("TDM version = " + self.tdm_version)
+    #   
+# class TripTableMgr
+
+class TripTableMgr_TDM19(TripTableMgr):
+    """ 
+    Class for TDM19-specific class for trip table utilities
+    """
+    def __init__(self):
+        TripTableMgr.__init__(self, "tdm19")
+    #
+    def open_trip_tables(self, tt_dir):
+        # stub for now
+        pass
+    #
+    def load_trip_tables(tt_omxs, modes=None):
+        # stub for now
+        pass
+    #
+# class TripTableMgr_TDM19
+
+class TripTableMgr_TDM23(TripTableMgr):
+    """ 
+    Class for TDM23-specific class for trip table utilities
+    """
+    def __init__(self):
+        TripTableMgr.__init__(self, "tdm23")
+    #
+    def open_trip_tables(self, tt_dir):
+        # stub for now
+        pass
+    #
+    def load_trip_tables(tt_omxs, modes=None):
+        # stub for now
+        pass
+    #
+# class TripTableMgr_TDM23
+
+
+#### Code from prototype below this point.
+
 _all_time_periods = ['am', 'md', 'pm', 'nt']
 _auto_modes = [ 'SOV', 'HOV' ]
 _truck_modes = [ 'Heavy_Truck', 'Heavy_Truck_HazMat', 'Medium_Truck', 'Medium_Truck_HazMat', 'Light_Truck' ]
@@ -50,7 +100,7 @@ def open_trip_tables(tt_dir):
     Function: open_trip_tables
 
     Summary: Given a directory containing the trip tables in OMX format for the 
-             four daily time periods used by the mode, open them and return 
+             four daily time periods used by the model, open them and return 
              a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
              value is the corresponding open OMX file.
 
@@ -104,6 +154,10 @@ def load_trip_tables(tt_omxs, modes=None):
     # end_for
     return retval
 # end_def load_trip_tables()
+
+
+#### Code from prototype above this point.
+
 
 
 ###############################################################################
@@ -180,7 +234,7 @@ class tazManager():
     # For debugging during development:
     def _get_tt_item(self, index):
         return self._taz_table[index]
-        
+      
     def mpo_to_tazes(self, mpo):
         """
         mpo_to_tazes(mpo): Given the name (i.e., abbreviation) of an MPO,
@@ -188,14 +242,14 @@ class tazManager():
         """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['mpo'] == mpo)
         return retval
-
+    
     def brmpo_tazes(self):
         """
-        brmpo_tazes() - Return the list of the records for the TAZes in the Boston Region MPO
+        brmpo_tazes(self) - Return the list of the records for the TAZes in the Boston Region MPO
         """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['in_brmpo'] == 1)
         return retval
-
+    
     def brmpo_town_to_tazes(self, mpo_town):
         """
         brmpo_town_to_tazes(town) - Given the name of a town in the Boston Region MPO,
@@ -203,7 +257,7 @@ class tazManager():
         """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['in_brmpo'] == 1 and x['town'] == mpo_town)
         return retval
-
+    
     def brmpo_subregion_to_tazes(self, mpo_subregion):
         """
         brmpo_subregion_to_tazes(subregion) - Given the name (i.e., abbreviation) of a Boston Region MPO subregion,
@@ -227,7 +281,7 @@ class tazManager():
         # end_if
         return retval
     # end_def mpo_subregion_to_tazes()
-    
+     
     def sector_to_tazes(self, sector):
         """
         sector_to_tazes - Given the name of an 'analysis sector', return the list of the records for the TAZes
@@ -235,7 +289,7 @@ class tazManager():
         """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['sector'] == sector)
         return retval
-    
+        
     # Note: Returns TAZes in town _regardless_ of state.
     def town_to_tazes(self, town):
         """
@@ -245,7 +299,7 @@ class tazManager():
         """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['town'] == town)
         return retval
-
+    
     def town_state_to_tazes(self, town, state):
         """
         town_state_to_tazes(town, state) - Given a town and a state abbreviation (e.g., 'MA'),
@@ -253,14 +307,14 @@ class tazManager():
         """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['state'] == state and x['town'] == town)
         return retval
-
+    
     def state_to_tazes(self, state):
         """
         state_to_tazes(state) - Given a state abbreviation, return the list of records for the TAZes in the state.
         """
         retval = pydash.collections.filter_(self._taz_table, lambda x: x['state'] == state)
         return retval
-        
+            
     def taz_ids(self, taz_record_list):
         """
         taz_ids(TAZ_record_list) - Given a list of TAZ records, return a list of _only_ the TAZ IDs from those records.
@@ -270,6 +324,7 @@ class tazManager():
             retval.append(taz['id'])
         # end_for
         return retval
+    #
 # end_class tazManager
 
 
