@@ -67,21 +67,22 @@ class TripTableMgr_TDM19(TripTableMgr):
     #
     def open_trip_tables(self, scenario_dir):
         """
-        Function: open_trip_tables
+        Function: open_trip_tables - TDM19 implementation
 
         Summary: Given a directory containing the trip tables in OMX format for the 
-                 four daily time periods used by the model, open them and return 
+                 four daily time periods used by the TDM19 model, open them and return 
                  a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
                  value is the corresponding open OMX file.
 
-        Args: tt_dir: directory containing trip table files in OMX format
+        Args: scenario_dir: directory containing TDM19 output for a given scenario;
+              the OMX-format trip-tables are found in the 'out' subdirectory 
 
         Returns: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
                  value is the corresponding open OMX file.
                  
         Raises: N/A
         """
-        tt_dir = scenario_dir + '/out'
+        tt_dir = scenario_dir + '/out/'
         tt_am = tt_dir + 'AfterSC_Final_AM_Tables.omx'
         tt_md = tt_dir + 'AfterSC_Final_MD_Tables.omx'
         tt_pm = tt_dir + 'AfterSC_Final_PM_Tables.omx'
@@ -95,7 +96,7 @@ class TripTableMgr_TDM19(TripTableMgr):
     #
     def load_trip_tables(self, tt_omxs, modes=None):
     """
-    Function: load_trip_tables
+    Function: load_trip_tables - TDM19 implementation
 
     Summary: Load the trip tables for all time periods the specified list of modes from
              open OMX files into NumPy arrays.
@@ -134,8 +135,45 @@ class TripTableMgr_TDM23(TripTableMgr):
         TripTableMgr.__init__(self, "tdm23")
     #
     def open_trip_tables(self, scenario_dir):
-        # stub for now
-        pass
+        """
+        Function: open_trip_tables - TDM23 implementation
+
+        Summary: Given a directory containing the trip tables in OMX format for the 
+                 four daily time periods used by the TDM23 model, open them and return 
+                 a dictionary with a two-level dictionary structure: the first level of which
+                 is { 'veh', 'per' }, and the second of which are the four time periods
+                {'am', 'md', 'pm', 'nt'}. The 'leaf' value of each element of this 2-level
+                dictionary is the corresponding open OMX file.
+
+        Args: scenario_dir: directory containing TDM23 output for a given scenario;
+              the OMX-format trip-tables are found in the '_summary' subdirectory
+
+        Returns: A two-level dictionary structure: the first level of which
+                 is { 'veh', 'per' }, and the second of which are the four time periods
+                {'am', 'md', 'pm', 'nt'}. The 'leaf' value of each element of this 2-level
+                dictionary is the corresponding open OMX file.
+                 
+        Raises: N/A
+        """
+        tt_dir = scenario_dir + '/_summary/'
+        tt_am_veh = tt_dir + 'od_veh_am.omx'
+        tt_am_per = tt_dir + 'od_per_am.omx'
+        tt_md_veh = tt_dir + 'od_veh_md.omx'
+        tt_md_per = tt_dir + 'od_per_md.omx'
+        tt_pm_veh = tt_dir + 'od_veh_pm.omx'
+        tt_pm_veh = tt_dir + 'od_per_pm.omx'
+        tt_nt_veh = tt_dir + 'od_veh_nt.omx'
+        tt_nt_per = tt_dir + 'od_per_nt.omx'
+        tt_omxs =   { 'am' : { 'veh' : omx.open_file(tt_am_veh,'r'),
+                               'per' : omx.open_file(tt_am_per,'r') },
+                      'md' : { 'veh' : omx.open_file(tt_md_veh,'r'),
+                               'per' : omx.open_file(tt_md_per,'r') },
+                      'pm' : { 'veh' : omx.open_file(tt_pm_veh,'r'),
+                               'per' : omx.open_file(tt_pm_per,'r') },
+                      'nt' : { 'veh' : omx.open_file(tt_nt_veh,'r'),
+                               'per' : omx.open_file(tt_nt_per,'r') }
+                    }
+        return tt_omxs
     #
     #
     def load_trip_tables(tt_omxs, modes=None):
@@ -322,15 +360,16 @@ class TazManager():
 #
 # NOTE: Much of the contnets Section 3 is specific to TDM19, and should only be used with TDM19 data.
 #       The relevant TDM19-specific portions of Section 3 are clearly marked with the comment
-#          *** TDM19-specific code
+#          *** TDM19-specific code ***
 #       These will be changed to accord with how transit data is organized in TDM23, when this has 
 #       become sufficiently well-defined.
 #
 # -- B.K. 04 November 2021
 
-# *** TDM19-specific code
-# he mode-to-metamode mapping machinery is specific to TDM19.
-# It may well not be required at all in TDM23.
+# *** TDM19-specific code ***
+#
+# NOTE: The mode-to-metamode mapping machinery is VERY specific to TDM19.
+#       It will problably NOT be required at all in TDM23.
 _mode_to_metamode_mapping_table = {
     1:  'MBTA Bus',
     2:  'MBTA Bus',
@@ -376,8 +415,7 @@ _mode_to_metamode_mapping_table = {
     42: 'RTA Bus',
     43: 'RTA Bus',
     70: 'Walk' }
-    
-# *** TDM19-Specific code
+#
 def mode_to_metamode(mode):
     """
     Function: mode_to_metamode
@@ -398,8 +436,10 @@ def mode_to_metamode(mode):
     # end_if
     return retval
 # mode_to_metamode()
+# *** END TDM19-specific code ***
 
-
+# The following function may be applicable to TDM23 as well as to TDM19.
+# This is currently to be determined.
 def calculate_total_daily_boardings(boardings_by_tod):
     """
     Function: calculate_total_daily_boardings
@@ -521,8 +561,8 @@ def calculate_total_daily_boardings(boardings_by_tod):
     return boardings_by_tod
 # end_def calculate_total_daily_boardings()
 
-
-
+# The following function may be applicable to TDM23 as well as to TDM19.
+# This is currently to be determined.
 def import_transit_assignment(scenario):
     """
     Function: import_transit_assignment
@@ -590,7 +630,6 @@ def import_transit_assignment(scenario):
     #
     return TODsums
 # end_def import_transit_assignment()
-
 #
 # END of Section 3: Utilities for the transit mode
 ###############################################################################
@@ -621,8 +660,52 @@ class HighwayAssignmentMgr_TDM19(HighwayAssignmentMgr):
         HighwayAssignmentMgr.__init__(self, "tdm19")
     #
     def load_highway_assignment(self, scenario):
-        # stub for now
-        pass
+        """
+            Method: load_highway_assignment(self, scenario)
+                    load TDM19 highway assignment data into eight pandas dataframes in a two-level dictionary
+                    
+            Args:   scenario - root directory of TDM19 scenario output
+            
+            Returns: 8 pandas dataframes organized as a two-level dict (first level = time period, 
+                     second level = { 'auto', 'truck' })
+                     
+            Raises: N/A
+        """
+        link_flow_dir = scenario_dir + 'out/'
+        
+        am_flow_auto_fn = link_flow_dir + 'AM_MMA_LinkFlow.csv'
+        am_flow_truck_fn = link_flow_dir + 'AM_MMA_LinkFlow_Trucks.csv'
+        md_flow_auto_fn = link_flow_dir + 'MD_MMA_LinkFlow.csv'
+        md_flow_truck_fn = link_flow_dir + 'MD_MMA_LinkFlow_Trucks.csv'
+        pm_flow_auto_fn = link_flow_dir + 'PM_MMA_LinkFlow.csv'
+        pm_flow_truck_fn = link_flow_dir + 'PM_MMA_LinkFlow_Trucks.csv'
+        nt_flow_auto_fn = link_flow_dir + 'NT_MMA_LinkFlow.csv'
+        nt_flow_truck_fn = link_flow_dir + 'NT_MMA_LinkFlow_Trucks.csv'
+        
+        # Read each of the above CSV files containing flow data into a dataframe
+        #
+        temp_am_auto_df = pd.read_csv(am_flow_auto_fn, delimiter=',')
+        temp_am_truck_df = pd.read_csv(am_flow_truck_fn, delimiter=',')
+        #
+        temp_md_auto_df = pd.read_csv(md_flow_auto_fn, delimiter=',')
+        temp_md_truck_df = pd.read_csv(md_flow_truck_fn, delimiter=',')
+        #
+        temp_pm_auto_df = pd.read_csv(pm_flow_auto_fn, delimiter=',')
+        temp_pm_truck_df = pd.read_csv(pm_flow_truck_fn, delimiter=',')
+        #
+        temp_nt_auto_df = pd.read_csv(nt_flow_auto_fn, delimiter=',')
+        temp_nt_truck_df = pd.read_csv(nt_flow_truck_fn, delimiter=',') 
+        
+        retval = { 'am' : { 'auto' : pd.read_csv(am_flow_auto_fn, delimiter=','),
+                            'truck': pd.read_csv(am_flow_truck_fn, delimiter=',') },
+                   'md' : { 'auto' : pd.read_csv(md_flow_auto_fn, delimiter=','),
+                            'truck': pd.read_csv(md_flow_truck_fn, delimiter=',') },
+                   'pm' : {  'auto' : pd.read_csv(pm_flow_auto_fn, delimiter=','),
+                            'truck': pd.read_csv(pm_flow_truck_fn, delimiter=',') },
+                   'nt' : {  'auto' : pd.read_csv(nt_flow_auto_fn, delimiter=','),
+                            'truck': pd.read_csv(nt_flow_truck_fn, delimiter=',') }
+                 }
+        return retval
     #
 # class HighwayAssignmentMgr_TDM19
 
