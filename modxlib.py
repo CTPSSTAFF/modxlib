@@ -382,14 +382,14 @@ def calculate_total_daily_boardings(boardings_by_tod):
     md_results = boardings_by_tod['MD']
     pm_results = boardings_by_tod['PM']
     nt_results = boardings_by_tod['NT']
-    
+    #
     # Compute the daily sums.
     #
     # Step 1: Join 'am' and 'md' dataframes
     j1 = pd.merge(am_results, md_results, on=['ROUTE', 'STOP'], how='outer', suffixes=('_am', '_md'))
     # Step 1.1 Replace NaN's with 0's
     j1 = j1.fillna(0)
-    
+    #
     # Step 1.2 Compute the 'AM' + 'MD' sums
     j1['DirectTransferOff'] = j1['DirectTransferOff_am'] + j1['DirectTransferOff_md']
     j1['DirectTransferOn'] = j1['DirectTransferOn_am'] + j1['DirectTransferOn_md']
@@ -400,7 +400,7 @@ def calculate_total_daily_boardings(boardings_by_tod):
     j1['WalkAccessOn'] = j1['WalkAccessOn_am'] + j1['WalkAccessOn_md'] 
     j1['WalkTransferOff'] = j1['WalkTransferOff_am'] + j1['WalkTransferOff_md']
     j1['WalkTransferOn'] = j1['WalkTransferOn_am'] + j1['WalkTransferOn_md']
-    
+    #
     # Step 1.3: Drop un-needed columns
     cols_to_drop = ['DirectTransferOff_am', 'DirectTransferOff_md',
                     'DirectTransferOn_am', 'DirectTransferOn_md',
@@ -411,14 +411,14 @@ def calculate_total_daily_boardings(boardings_by_tod):
                     'WalkAccessOn_am', 'WalkAccessOn_md',
                     'WalkTransferOff_am', 'WalkTransferOff_md',
                     'WalkTransferOn_am', 'WalkTransferOn_md']
-    
+    #
     j1 = j1.drop(columns=cols_to_drop)
-    
+    #
     # Step 2: j2 - join 'pm' and 'nt' data frames
     j2 = pd.merge(pm_results, nt_results, on=['ROUTE', 'STOP'], how='outer', suffixes=('_pm', '_nt'))
     # Step 2.1: Replace NaN's with 0's
     j2 = j2.fillna(0)
-    
+    #
     # Step 2.2: Compute the 'PM' + 'NT' sums
     j2['DirectTransferOff'] = j2['DirectTransferOff_pm'] + j2['DirectTransferOff_nt']
     j2['DirectTransferOn'] = j2['DirectTransferOn_pm'] + j2['DirectTransferOn_nt']
@@ -429,7 +429,7 @@ def calculate_total_daily_boardings(boardings_by_tod):
     j2['WalkAccessOn'] = j2['WalkAccessOn_pm'] + j2['WalkAccessOn_nt'] 
     j2['WalkTransferOff'] = j2['WalkTransferOff_pm'] + j2['WalkTransferOff_nt']
     j2['WalkTransferOn'] = j2['WalkTransferOn_pm'] + j2['WalkTransferOn_nt']
-    
+    #
     # Step 2.3: Drop un-needed columns
     cols_to_drop = ['DirectTransferOff_pm', 'DirectTransferOff_nt',
                     'DirectTransferOn_pm', 'DirectTransferOn_nt',
@@ -442,12 +442,12 @@ def calculate_total_daily_boardings(boardings_by_tod):
                     'WalkTransferOn_pm', 'WalkTransferOn_nt'
                     ]
     j2 = j2.drop(columns=cols_to_drop)
-    
+    #
     # Step 3: Join "j1" and "j2" to produce a dataframe with the daily totals
     daily_df = pd.merge(j1, j2, on=['ROUTE', 'STOP'], how='outer', suffixes=('_j1', '_j2'))
     # Step 3.1 : Replace any NaN's with 0's. This line _shouldn't_ be needed - just being extra cautious.
     daily_df = daily_df.fillna(0)
-    
+    #
     # Step 3.2 : Compute THE daily sums
     daily_df['DirectTransferOff'] = daily_df['DirectTransferOff_j1'] + daily_df['DirectTransferOff_j2']
     daily_df['DirectTransferOn'] = daily_df['DirectTransferOn_j1'] + daily_df['DirectTransferOn_j2']
@@ -458,7 +458,7 @@ def calculate_total_daily_boardings(boardings_by_tod):
     daily_df['WalkAccessOn'] = daily_df['WalkAccessOn_j1'] + daily_df['WalkAccessOn_j2'] 
     daily_df['WalkTransferOff'] = daily_df['WalkTransferOff_j1'] + daily_df['WalkTransferOff_j2']
     daily_df['WalkTransferOn'] = daily_df['WalkTransferOn_j1'] + daily_df['WalkTransferOn_j2']
-    
+    #
     # Step 3.3 : Drop un-needed columns
     cols_to_drop = ['DirectTransferOff_j1', 'DirectTransferOff_j2',
                     'DirectTransferOn_j1', 'DirectTransferOn_j2',
@@ -471,15 +471,13 @@ def calculate_total_daily_boardings(boardings_by_tod):
                     'WalkTransferOn_j1', 'WalkTransferOn_j2'
                     ]
     daily_df = daily_df.drop(columns=cols_to_drop)
-    
+    #
     # Finally, we've got the 'daily' total dataframe!
     boardings_by_tod['daily'] = daily_df
     return boardings_by_tod
 # end_def calculate_total_daily_boardings()
 
 
-# PLACEHOLDER FOR import_transit_assignment
-#
 # Function: import_transit_assignment
 # 
 # NOTE: This method _should_ work equally well for TDM19 and TDM23.
@@ -518,16 +516,16 @@ def import_transit_assignment(scenario):
     tods = ["AM", "MD", "PM", "NT"]
     # At the end of execution of this function, the dictionary variable'TODsums' will contain all the TOD summed results:
     # one key-value-pair for each 'tod' AND the 'daily' total as well.
-    
+    #
     # The dict 'TODsums' is the return value of this function.
     TODsums = { 'AM' : None, 'MD' : None, 'PM' : None, 'NT' : None }
-    
+    #
     # Import CSV files and create sum tables for each T-O-D (a.k.a. 'time period').
     for tod in tods:
         # Get full paths to _all_ CSV files for the current t-o-d.
         x = tod + '/' 
         fq_csv_fns = glob.glob(os.path.join(base,x,r'*.csv'))
-               
+        #      
         # 'tablist' : List of all the dataframes created from reading in the all the CSV files for the current t-o-d
         tablist = []
         for csv_file in fq_csv_fns:
@@ -537,9 +535,9 @@ def import_transit_assignment(scenario):
         # Sum the tables for the current TOD
         TODsums[tod] = reduce(lambda a, b: a.add(b, fill_value=0), tablist)
     # end_for over all tod's
-    
+    #
     TODsums =  calculate_total_daily_boardings(TODsums)
-    
+    #
     # Ensure that the ROUTE and STOP columns of each dataframe in TODsums aren't indices.
     for k in TODsums.keys():
         TODsums[k] = TODsums[k].reset_index()
