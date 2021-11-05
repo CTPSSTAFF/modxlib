@@ -28,7 +28,7 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.2.3"
+_version = "0.3.0"
 def get_version():
     return _version
 # end_def
@@ -43,6 +43,7 @@ class TripTableMgr():
     Abstract base class for TDM-version specific class for trip table utilities
     """
     tdm_version = ''
+    _all_time_periods = ['am', 'md', 'pm', 'nt']
     def __init__(self, version_string):
         self.tdm_version = version_string
     #
@@ -55,75 +56,44 @@ class TripTableMgr_TDM19(TripTableMgr):
     """ 
     Class for TDM19-specific class for trip table utilities
     """
+    _auto_modes = [ 'SOV', 'HOV' ]
+    _truck_modes = [ 'Heavy_Truck', 'Heavy_Truck_HazMat', 'Medium_Truck', 'Medium_Truck_HazMat', 'Light_Truck' ]
+    _nm_modes = [ 'Walk', 'Bike' ]
+    _transit_modes = [ 'DAT_Boat', 'DET_Boat', 'DAT_CR', 'DET_CR', 'DAT_LB', 'DET_LB', 'DAT_RT', 'DET_RT', 'WAT' ]
+    _all_modes = _auto_modes + _truck_modes + _nm_modes + _transit_modes
+    #
     def __init__(self):
         TripTableMgr.__init__(self, "tdm19")
     #
-    def open_trip_tables(self, tt_dir):
-        # stub for now
-        pass
+    def open_trip_tables(self, scenario_dir):
+        """
+        Function: open_trip_tables
+
+        Summary: Given a directory containing the trip tables in OMX format for the 
+                 four daily time periods used by the model, open them and return 
+                 a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+                 value is the corresponding open OMX file.
+
+        Args: tt_dir: directory containing trip table files in OMX format
+
+        Returns: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
+                 value is the corresponding open OMX file.
+                 
+        Raises: N/A
+        """
+        tt_dir = scenario_dir + '/out'
+        tt_am = tt_dir + 'AfterSC_Final_AM_Tables.omx'
+        tt_md = tt_dir + 'AfterSC_Final_MD_Tables.omx'
+        tt_pm = tt_dir + 'AfterSC_Final_PM_Tables.omx'
+        tt_nt = tt_dir + 'AfterSC_Final_NT_Tables.omx'
+        tt_omxs = { 'am' : omx.open_file(tt_am,'r'),
+                    'md' : omx.open_file(tt_pm,'r'),
+                    'pm' : omx.open_file(tt_pm,'r'),
+                    'nt' : omx.open_file(tt_nt,'r') 
+                  }   
+        return tt_omxs
     #
-    def load_trip_tables(tt_omxs, modes=None):
-        # stub for now
-        pass
-    #
-# class TripTableMgr_TDM19
-
-class TripTableMgr_TDM23(TripTableMgr):
-    """ 
-    Class for TDM23-specific class for trip table utilities
-    """
-    def __init__(self):
-        TripTableMgr.__init__(self, "tdm23")
-    #
-    def open_trip_tables(self, tt_dir):
-        # stub for now
-        pass
-    #
-    def load_trip_tables(tt_omxs, modes=None):
-        # stub for now
-        pass
-    #
-# class TripTableMgr_TDM23
-
-
-#### Code from prototype below this point.
-
-_all_time_periods = ['am', 'md', 'pm', 'nt']
-_auto_modes = [ 'SOV', 'HOV' ]
-_truck_modes = [ 'Heavy_Truck', 'Heavy_Truck_HazMat', 'Medium_Truck', 'Medium_Truck_HazMat', 'Light_Truck' ]
-_nm_modes = [ 'Walk', 'Bike' ]
-_transit_modes = [ 'DAT_Boat', 'DET_Boat', 'DAT_CR', 'DET_CR', 'DAT_LB', 'DET_LB', 'DAT_RT', 'DET_RT', 'WAT' ]
-_all_modes = _auto_modes + _truck_modes + _nm_modes + _transit_modes
-
-def open_trip_tables(tt_dir):
-    """
-    Function: open_trip_tables
-
-    Summary: Given a directory containing the trip tables in OMX format for the 
-             four daily time periods used by the model, open them and return 
-             a dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
-             value is the corresponding open OMX file.
-
-    Args: tt_dir: directory containing trip table files in OMX format
-
-    Returns: A dictionary with the keys 'am', 'md', 'pm', and 'nt' whose
-             value is the corresponding open OMX file.
-             
-    Raises: N/A
-    """
-    tt_am = tt_dir + 'AfterSC_Final_AM_Tables.omx'
-    tt_md = tt_dir + 'AfterSC_Final_MD_Tables.omx'
-    tt_pm = tt_dir + 'AfterSC_Final_PM_Tables.omx'
-    tt_nt = tt_dir + 'AfterSC_Final_NT_Tables.omx'
-    tt_omxs = { 'am' : omx.open_file(tt_am,'r'),
-                'md' : omx.open_file(tt_pm,'r'),
-                'pm' : omx.open_file(tt_pm,'r'),
-                'nt' : omx.open_file(tt_nt,'r') 
-              }   
-    return tt_omxs
-# end_def open_trip_tables()
-
-def load_trip_tables(tt_omxs, modes=None):
+    def load_trip_tables(self, tt_omxs, modes=None):
     """
     Function: load_trip_tables
 
@@ -143,21 +113,36 @@ def load_trip_tables(tt_omxs, modes=None):
     Raises: N/A
     """ 
     if modes == None:
-        modes = _all_modes
+        modes = self._all_modes
     #
     retval  = { 'am' : {}, 'md' : {}, 'pm' : {}, 'nt' : {} }
-    for period in _all_time_periods:
+    for period in self._all_time_periods:
         for mode in modes:
             temp = tt_omxs[period][mode]
             retval[period][mode] = np.array(temp)
         # end_for
     # end_for
     return retval
-# end_def load_trip_tables()
+    #
+# class TripTableMgr_TDM19
 
-
-#### Code from prototype above this point.
-
+class TripTableMgr_TDM23(TripTableMgr):
+    """ 
+    Class for TDM23-specific class for trip table utilities
+    """
+    def __init__(self):
+        TripTableMgr.__init__(self, "tdm23")
+    #
+    def open_trip_tables(self, scenario_dir):
+        # stub for now
+        pass
+    #
+    #
+    def load_trip_tables(tt_omxs, modes=None):
+        # stub for now
+        pass
+    #
+# class TripTableMgr_TDM23
 
 
 ###############################################################################
@@ -165,11 +150,11 @@ def load_trip_tables(tt_omxs, modes=None):
 # Section 2: TAZ "shapefile" management
 #
 #
-class tazManager():
+class TazManager():
     """
-    class: tazManager
+    class: TazManager
 
-    Summary: The class "tazManager" provides a set of methods to perform _attribute_ queries
+    Summary: The class "TazManager" provides a set of methods to perform _attribute_ queries
              on an ESRI-format "Shapefile" that represents the TAZes in the model region.
              The attributes are read from the Shapefile's .DBF file; other components of
              the Shapefile are ignored.
@@ -190,7 +175,7 @@ class tazManager():
                   indicates that the TAZ is outsize of the 164 municipalities
                   comprising what was once known as the 'CTPS Model Region'.
 
-    An object of class tazManager is instantiated by passing in the fully-qualified path
+    An object of class TazManager is instantiated by passing in the fully-qualified path
     to a Shapefile to the class constructor. Hence, it is possible to have more than one
     instance of this class active simultaneously, should this be needed.
 
@@ -199,18 +184,21 @@ class tazManager():
     To convert such a list to a list of _only_ the TAZ IDs, call taz_ids on the list of TAZ records.
     """
     _instance = None
-    _default_base = r'G:/Data_Resources/modx/canonical_TAZ_shapefile/'
+    _default_shapefile_dir = r'G:/Data_Resources/modx/canonical_TAZ_shapefile/'
     _default_shapefile_fn = 'candidate_CTPS_TAZ_STATEWIDE_2019.shp'
-    _default_fq_shapefile_fn = _default_base + _default_shapefile_fn
+    # _default_fq_shapefile_fn = _default_base + _default_shapefile_fn
     _taz_table = []
     
-    def __init__(self, my_shapefile_fn=None):
-        # print('Creating the tazManager object.')
+    def __init__(self, my_shapefile_dir=None, my_shapefile_fn=None):
+        # print('Creating the TazManager object.')
+        if my_shapefile_dir == None:
+            my_shapefile_dir = self._default_shapefile_dir
         if my_shapefile_fn == None:
-            my_shapefile_fn = self._default_fq_shapefile_fn
+            my_shapefile_fn = self._default_shapefile_fn
         #
+        my_shapefile_fq_fn = my_shapefile_dir + my_shapefile_fn
         # Derive name of .dbf file 
-        my_dbffile_fn = my_shapefile_fn.replace('.shp', '.dbf')
+        my_dbffile_fn = my_shapefile_fq_fn.replace('.shp', '.dbf')
         dbf_table = DBF(my_dbffile_fn, load=True)
         for record in dbf_table.records:
             new = {}
@@ -325,7 +313,7 @@ class tazManager():
         # end_for
         return retval
     #
-# end_class tazManager
+# end_class TazManager
 
 
 ###############################################################################
