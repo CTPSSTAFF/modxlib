@@ -357,27 +357,28 @@ def mode_to_metamode(mode):
 # mode_to_metamode()
 
 
-# Function: calculate_total_daily_boardings
-#
-# Summary: Calculate the daily total boardings across all time periods.
-# This calculation requires a bit of subtelty, because the number of rows in the four
-# data frames produced by produced in the calling function is NOT necessarily the same. 
-# A brute-force apporach will not work, generally speaking.
-# See comments in the code below for details.
-#
-# NOTE: This is a helper function for import_transit_assignment, which see.
-#   
-# Args: boardings_by_tod: a dict with the keys 'AM', 'MD', 'PM', and 'NT'
-# 	  for which the value of each key is a data frame containing the total
-# 	  boardings for the list of routes specified in the input CSV file.
-#
-# Returns: The input dict (boardings_by_tod) with an additional key 'daily'
-# 		 the value of which is a dataframe with the total daily boardings
-# 		 for all routes specified in the input CSV across all 4 time periods.
-#
-# Raises: N/A
-#
 def calculate_total_daily_boardings(boardings_by_tod):
+    """
+    Function: calculate_total_daily_boardings
+    
+    Summary: Calculate the daily total boardings across all time periods.
+    This calculation requires a bit of subtelty, because the number of rows in the four
+    data frames produced by produced in the calling function is NOT necessarily the same. 
+    A brute-force apporach will not work, generally speaking.
+    See comments in the code below for details.
+    
+    NOTE: This is a helper function for import_transit_assignment, which see.
+    
+    Args: boardings_by_tod: a dict with the keys 'AM', 'MD', 'PM', and 'NT'
+          for which the value of each key is a data frame containing the total
+          boardings for the list of routes specified in the input CSV file.
+    
+    Returns: The input dict (boardings_by_tod) with an additional key 'daily'
+             the value of which is a dataframe with the total daily boardings
+             for all routes specified in the input CSV across all 4 time periods.
+    
+    Raises: N/A
+    """
     am_results = boardings_by_tod['AM']
     md_results = boardings_by_tod['MD']
     pm_results = boardings_by_tod['PM']
@@ -478,40 +479,42 @@ def calculate_total_daily_boardings(boardings_by_tod):
 # end_def calculate_total_daily_boardings()
 
 
-# Function: import_transit_assignment
-# 
-# NOTE: This method _should_ work equally well for TDM19 and TDM23.
-#       Under TDM19, the directory containing the output CSVs may (and often does)
-#       contain multiple CSVs per mode; under TMD23, it will contain only one CSV
-#       file per mode. The code will work equally well in both cases.
-#       For TDM23, some change to the location of the directory containing the 
-#       CSV files may be required.
-#
-# Summary:  Import transit assignment result CSV files for a given scenario.
-#
-# 1. Read all CSV files for each time period ('tod'), and caclculate the sums for each time period.
-#    Step 1 can be performed as a brute-force sum across all columns, since the number of rows in
-#    the CSVs (and thus the dataframes) for any given time period are all the same.
-#
-# 2. Calculate the daily total across all time periods.
-#    Step 2 requires a bit of subtelty, because the number of rows in the data frames produced in 
-#    Step 1 is NOT necessarily the same. A brute-force apporach will not work, generally speaking.
-#    See comments in the code below for details.
-#    NOTE: This step is performed by the helper function calculate_total_daily_boardings.
-#
-# Args: scenario: path to directory containing transit assignment results in CSV file format
-#
-# Returns: a dict of the form:
-#         { 'AM'    : dataframe with totals for the AM period,
-#           'MD'    : datafrme with totals for the MD period,
-#           'PM'    : dataframe with totals for the PM period,
-#           'NT'    : dataframe with totals for the NT period,
-#           'daily' : dataframe with totals for the entire day
-#         }
-#
-# Raises: N/A
-#
+
 def import_transit_assignment(scenario):
+    """
+    Function: import_transit_assignment
+    
+    NOTE: This method _should_ work equally well for TDM19 and TDM23.
+          Under TDM19, the directory containing the output CSVs may (and often does)
+          contain multiple CSVs per mode; under TMD23, it will contain only one CSV
+          file per mode. The code will work equally well in both cases.
+          For TDM23, some change to the location of the directory containing the 
+          CSV files may be required.
+    
+    Summary:  Import transit assignment result CSV files for a given scenario.
+    
+    1. Read all CSV files for each time period ('tod'), and caclculate the sums for each time period.
+       Step 1 can be performed as a brute-force sum across all columns, since the number of rows in
+       the CSVs (and thus the dataframes) for any given time period are all the same.
+    
+    2. Calculate the daily total across all time periods.
+       Step 2 requires a bit of subtelty, because the number of rows in the data frames produced in 
+       Step 1 is NOT necessarily the same. A brute-force apporach will not work, generally speaking.
+       See comments in the code below for details.
+       NOTE: This step is performed by the helper function calculate_total_daily_boardings.
+    
+    Args: scenario: path to directory containing transit assignment results in CSV file format
+    
+    Returns: a dict of the form:
+            { 'AM'    : dataframe with totals for the AM period,
+              'MD'    : datafrme with totals for the MD period,
+              'PM'    : dataframe with totals for the PM period,
+              'NT'    : dataframe with totals for the NT period,
+              'daily' : dataframe with totals for the entire day
+            }
+    
+    Raises: N/A
+    """
     base = scenario + r'out/'
     tods = ["AM", "MD", "PM", "NT"]
     # At the end of execution of this function, the dictionary variable'TODsums' will contain all the TOD summed results:
