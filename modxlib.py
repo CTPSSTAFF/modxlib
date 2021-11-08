@@ -839,38 +839,80 @@ class HighwayAssignmentMgr_TDM23(HighwayAssignmentMgr):
 #
 # Section 5: Utilities for working with "skims"
 #
-class SkimsMgr():
+class SkimMgr():
     """
-    Abstract base class for TDM-version specific class for "skims" utilities
+    Abstract base class for TDM-version specific class for "skim" utilities
     """
     tdm_version = ''
+    # Note: Duplicated code.
+    _all_time_periods = ['am', 'md', 'pm', 'nt']
     def __init__(self, version_string):
         self.tdm_version = version_string
     #
     def display_version(self):
         print("TDM version = " + self.tdm_version)
     #
-# class SkimsMgr
+# class SkimMgr
 
-class SkimsMgr_TDM19(SkimsMgr):
+class SkimMgr_TDM19(SkimMgr):
     def __init__(self):
-        SkimsMgr.__init__(self, "tdm19")
+        SkimMgr.__init__(self, "tdm19")
     #
-    def load_skims(self, scenario):
+    
+    def open_skims(self, scenario_dir):
+        skims_root_dir = scenario_dir + '/out/'
+        # Names of time-period-specific skims directories
+        skims_dirs = { 'am' : skims_root_dir + r'\Skims_Am_OMX',
+                       'md' : skims_root_dir + r'\Skims_Md_OMX',
+                       'pm' : skims_root_dir + r'\Skims_Pm_OMX',
+                       'nt' : skims_root_dir + r'\Skims_Nt_OMX'
+                     } 
+         # Skim OMX files (matrices) - one set per time period
+        skim_components = { 'DAT_BT' : '_DAT_BT_Skim.omx', 
+                            'DAT_CR' : '_DAT_CR_Skim.omx', 
+                            'DAT_LB' : '_DAT_LB_Skim.omx', 
+                            'DAT_RT' : '_DAT_RT_Skim.omx', 
+                            'SOV'    : '_SOV_Skim.omx', 
+                            'WAT'    : '_WAT_Skim.omx'    
+                          } 
+        
+        tps = self._all_time_periods
+        # We will only work with the 'AM' skims, for starters.
+        #This is the only sample data we have so far.
+        tps = [ 'am' ]
+        
+        # Return value: data structure in which we will store the opened skim OMXs
+        skim_omxs = { 'am' : {}, 'md' : {}, 'pm' : {}, 'nt' : {} }
+        for tp in tps:
+            for sc in skim_components.keys():
+                tp_upper = tp.upper()
+                fn = skims_dirs[tp] + '\\' + tp_upper + skim_components[sc]
+                # temp = omx.open_file(fn, 'r')
+                skim_omxs[tp][sc] = omx.open_file(fn, 'r')
+            # end_for
+        # end_for
+        return skim_omxs
+    # end_def open_skims()
+    #
+    def load_skims(self, skim_omxs):
         # stub for now
         pass
     #
-# class SkimsMgr_TDM19
+# class SkimMgr_TDM19
 
-class SkimsMgr_TDM23(SkimsMgr):
+class SkimMgr_TDM23(SkimMgr):
     def __init__(self):
-        SkimsMgr.__init__(self, "tdm23")
+        SkimMgr.__init__(self, "tdm23")
     #
-    def load_skims(self, scenario):
+    def open_skims(self, scenario_dir):
         # stub for now
         pass
     #
-# class SkimsMgr_TDM23
+    def load_skims(self, skim_omxs):
+        # stub for now
+        pass
+    #
+# class SkimMgr_TDM23
 
 
 ###############################################################################
