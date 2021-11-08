@@ -131,7 +131,7 @@ class TripTableMgr_TDM23(TripTableMgr):
     """ 
     Class for TDM23-specific class for trip table utilities
     """
-    _veh_modes = [ 'sov', 'how', 'ltrk', 'mtrk', 'htrk' ]
+    _veh_modes = [ 'sov', 'hov', 'ltrk', 'mtrk', 'htrk' ]
     _per_modes = [ 'auto', 'nonm', 'ta_acc', 'ta_egr', 'tw' ]
     _all_modes = _veh_modes + _per_modes
     def __init__(self):
@@ -152,9 +152,10 @@ class TripTableMgr_TDM23(TripTableMgr):
               the OMX-format trip-tables are found in the '_summary' subdirectory
 
         Returns: A two-level dictionary structure: the first level of which
-                 is { 'veh', 'per' }, and the second of which are the four time periods
-                {'am', 'md', 'pm', 'nt'}. The 'leaf' value of each element of this 2-level
-                dictionary is the corresponding open OMX file.
+                 is the four time periods {'am', 'md', 'pm', 'nt'}, and the
+                 second of which is ( 'veh', 'per' ).
+                .The 'leaf' value of each element of this 2-level dict
+                 is the corresponding open OMX file.
                  
         Raises: N/A
         """
@@ -180,6 +181,24 @@ class TripTableMgr_TDM23(TripTableMgr):
     #
     #
     def load_trip_tables(tt_omxs, veh_modes=None, per_modes=None):
+        """
+        Function: load_trip_tables - TDM123 implementation
+
+        Summary: Load the trip tables for all time periods the specified list of modes from
+                 the OMX files dict returned by openn_trip_tables into NumPy arrays.
+                 If no list of modes is passed, trip tables for all modes will be returned.
+
+        Args: tt_omxs: Dictionary, keyed by time period identifier ('am', 'md', 'pm', and 'nt'),
+                       each of whose values is the open OMX trip table file for the corresponding
+                       time period.
+               modes: List of modes (strings) or None
+
+        Returns: A two-level dictionary (i.e., first level = time period, second level = mode)
+                 the second level of which contain the trip table, in the form of a numPy array,
+                 for the [time_period][mode] in question.
+
+        Raises: N/A
+        """
         if veh_modes == None:
             veh_modes = self._veh_modes
         #
@@ -719,9 +738,9 @@ class HighwayAssignmentMgr_TDM19(HighwayAssignmentMgr):
                             'truck': pd.read_csv(am_flow_truck_fn, delimiter=',') },
                    'md' : { 'auto' : pd.read_csv(md_flow_auto_fn, delimiter=','),
                             'truck': pd.read_csv(md_flow_truck_fn, delimiter=',') },
-                   'pm' : {  'auto' : pd.read_csv(pm_flow_auto_fn, delimiter=','),
+                   'pm' : { 'auto' : pd.read_csv(pm_flow_auto_fn, delimiter=','),
                             'truck': pd.read_csv(pm_flow_truck_fn, delimiter=',') },
-                   'nt' : {  'auto' : pd.read_csv(nt_flow_auto_fn, delimiter=','),
+                   'nt' : { 'auto' : pd.read_csv(nt_flow_auto_fn, delimiter=','),
                             'truck': pd.read_csv(nt_flow_truck_fn, delimiter=',') }
                  }
         return retval
@@ -730,7 +749,7 @@ class HighwayAssignmentMgr_TDM19(HighwayAssignmentMgr):
 
 class HighwayAssignmentMgr_TDM23(HighwayAssignmentMgr):
     """ 
-    Class for TDM23-specific class for highway assingment utilities
+    Class for TDM23-specific class for highway assignment utilities
     """
     def __init__(self):
         HighwayAssignmentMgr.__init__(self, "tdm23")
