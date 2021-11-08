@@ -751,12 +751,86 @@ class HighwayAssignmentMgr_TDM23(HighwayAssignmentMgr):
     """ 
     Class for TDM23-specific class for highway assignment utilities
     """
+    _hwy_asgn_columns = [ 'ID', 'Anode', 'Bnode', 'Length', 
+                        'street_name', 'route_number', 'taz_id', 'dir', 'func_class', 
+                        'AB_lanes', 'BA_lanes', 
+                        'shoulder_am', 'shoulder_pm', 
+                        'AB_off_am', 'BA_off_am', 
+                        'AB_off_pm', 'BA_off_pm', 
+                        'peak_hov', 'max_truck_size',
+                        'toll_auto', 'toll_lt_trk', 'toll_md_trk', 'toll_hv_trk', 
+                        'posted_speed', 'median', 'area_type', 'access_control', 
+                        'alpha_input', 'beta_input', 'ff_speed_input', 'capacity_input',
+                        'auto_time_input', 'transit_time_input', 'walk_time_input',
+                        'pnr_parking_cost', 'pnr_shadow_cost_am_input', 'available', 
+                        'project_name', 'project_id', 'count_station', 
+                        'hov_only', 'truck_only',
+                        'small_veh_only', 'no_heavy_truck', 'transit_only', 'walk_bike_only', 'no_walk_bike', 
+                        'alpha', 'beta', 'ff_time', 'capacity',
+                        'AB_AM_capacity', 'AB_MD_capacity', 'AB_PM_capacity', 'AB_NT_capacity',
+                        'BA_AM_capacity', 'BA_MD_capacity', 'BA_PM_capacity', 'BA_NT_capacity',
+                        'AB_AM_ctime', 'AB_MD_ctime', 'AB_PM_ctime', 'AB_NT_ctime',
+                        'BA_AM_ctime', 'BA_MD_ctime', 'BA_PM_ctime', 'BA_NT_ctime',
+                        'AB_AM_cspd', 'AB_MD_cspd', 'AB_PM_cspd', 'AB_NT_cspd',
+                        'BA_AM_cspd', 'BA_MD_cspd', 'BA_PM_cspd', 'BA_NT_cspd',
+                        'AB_AM_vol', 'AB_MD_vol', 'AB_PM_vol', 'AB_NT_vol',
+                        'BA_AM_vol', 'BA_MD_vol', 'BA_PM_vol', 'BA_NT_vol',
+                        'AB_AM_vmt', 'AB_MD_vmt', 'AB_PM_vmt', 'AB_NT_vmt',
+                        'BA_AM_vmt', 'BA_MD_vmt', 'BA_PM_vmt', 'BA_NT_vmt',
+                        'AB_AM_vht', 'AB_MD_vht', 'AB_PM_vht', 'AB_NT_vht',
+                        'BA_AM_vht', 'BA_MD_vht', 'BA_PM_vht', 'BA_NT_vht',
+                        'AB_AM_vht', 'AB_MD_vht', 'AB_PM_vht', 'AB_NT_vht',
+                        'BA_AM_vht', 'BA_MD_vht', 'BA_PM_vht', 'BA_NT_vht',
+                        'AB_AM_pce', 'AB_MD_pce', 'AB_PM_pce', 'AB_NT_pce',
+                        'BA_AM_pce', 'BA_MD_pce', 'BA_PM_pce', 'BA_NT_pce',
+                        'AB_AM_voc', 'AB_MD_voc', 'AB_PM_voc', 'AB_NT_voc',
+                        'BA_AM_voc', 'BA_MD_voc', 'BA_PM_voc', 'BA_NT_voc',
+                        'AB_AM_sov', 'AB_MD_sov', 'AB_PM_sov', 'AB_NT_sov',
+                        'BA_AM_sov', 'BA_MD_sov', 'BA_PM_sov', 'BA_NT_sov',
+                        'AB_AM_hov', 'AB_MD_hov', 'AB_PM_hov', 'AB_NT_hov',
+                        'BA_AM_hov', 'BA_MD_hov', 'BA_PM_hov', 'BA_NT_hov',
+                        'AB_AM_ltrk', 'AB_MD_ltrk', 'AB_PM_ltrk', 'AB_NT_ltrk',
+                        'BA_AM_ltrk', 'BA_MD_ltrk', 'BA_PM_ltrk', 'BA_NT_ltrk',
+                        'AB_AM_mtrk', 'AB_MD_mtrk', 'AB_PM_mtrk', 'AB_NT_mtrk',
+                        'BA_AM_mtrk', 'BA_MD_mtrk', 'BA_PM_mtrk', 'BA_NT_mtrk',
+                        'AB_AM_htrk', 'AB_MD_htrk', 'AB_PM_htrk', 'AB_NT_htrk',
+                        'BA_AM_htrk', 'BA_MD_htrk', 'BA_PM_htrk', 'BA_NT_htrk',
+                        'AB_daily_vol', 'BA_daily_vol', 'AB_daily_vmt', 'BA_daily_vmt', 'AB_daily_vht', 'BA_daily_vht',
+                        'AB_daily_sov', 'BA_daily_sov', 'AB_daily_hov', 'BA_daily_hov',
+                        'AB_daily_ltrk', 'AB_daily_ltrk', 'AB_daily_mtrk', 'BA_daily_mtrk', 'AB_daily_htrk', 'BA_daily_htrk' ]
     def __init__(self):
         HighwayAssignmentMgr.__init__(self, "tdm23")
     #
-    def load_highway_assignment(self, scenario):
-        # stub for now
-        pass
+    def load_highway_assignment(self, scenario, columns=None):
+        """"
+            Method: load_highway_assignment(self, scenario, columns=None)
+                    load TDM23 highway assignment data in CSV format into 4 pandas dataframes
+                    in a dictionary indexed by time period { 'am', 'md', 'pm', 'nt' }
+                    
+            Args:   scenario - root directory of TDM23 scenario output
+                    columns - columns in the CSV files to load;
+                              the default value (None) indicates loading all columns
+            
+            Returns: 4 pandas dataframes organized as a dict indexed by time period 
+                     
+            Raises: N/A
+        """
+        if columns == None:
+            columns = self._hwy_asgn_columns
+        #
+        link_flow_dir = scenario_dir + '_demand/highway/'
+        
+        am_flow_fn = link_flow_dir + 'AM_MMA_LinkFlow.csv'
+        md_flow_fn = link_flow_dir + 'MD_MMA_LinkFlow.csv'
+        pm_flow_fn = link_flow_dir + 'PM_MMA_LinkFlow.csv'
+        nt_flow_fn = link_flow_dir + 'NT_MMA_LinkFlow.csv'
+        
+        retval = { 'am' : pd.read_csv(am_flow_fn, delimiter=',', usecols=columns),
+                   'md' : pd.read_csv(md_flow_fn, delimiter=',', usecols=columns),
+                   'pm' : pd.read_csv(pm_flow_fn, delimiter=',', usecols=columns),
+                   'nt' : pd.read_csv(nt_flow_fn, delimiter=',', usecols=columns),
+        }
+        return retval
     #
 # class HighwayAssignmentMgr_TDM23
 
