@@ -867,7 +867,7 @@ class SkimMgr_TDM19(SkimMgr):
                        'pm' : skims_root_dir + r'\Skims_Pm_OMX',
                        'nt' : skims_root_dir + r'\Skims_Nt_OMX'
                      } 
-         # Skim OMX files (matrices) - one set per time period
+         # Skim OMX files - one set per time period
         skim_components = { 'DAT_BT' : '_DAT_BT_Skim.omx', 
                             'DAT_CR' : '_DAT_CR_Skim.omx', 
                             'DAT_LB' : '_DAT_LB_Skim.omx', 
@@ -905,9 +905,28 @@ class SkimMgr_TDM23(SkimMgr):
         SkimMgr.__init__(self, "tdm23")
     #
     def open_skims(self, scenario_dir):
-        # stub for now
-        pass
-    #
+        # Bike and walk skims are in the _highway directory.
+        # There will be one OMX for bike and walk, and 
+        # four time-period-specific OMXs for all else.
+        highway_skim_dir = scenario_dir + '/_highway/'
+        transit_skim_dir = scenario_dir + '/_transit/'
+        
+        # Return value: data structure in which we will store the opened skim OMXs
+        skim_omxs = { 'am' : {}, 'md' : {}, 'pm' : {}, 'nt' : {}, 'daily' : {} }
+        #
+        for tp in self._all_time_periods:
+            fn = highway_skim_dir + tp + '_highway_skim.omx'
+            skim_omxs[tp]['highway'] = omx.open_file(fn, 'r')
+            fn = transit_skim_dir + '_transit_walk_skim.omx'
+            skim_omxs[tp]['transit_walk'] = omx.open_file(fn, 'r')
+            fn = transit_skim_dir + '_transit_auto_skim.omx'
+            skim_omxs[tp]['transit_auto'] = omx.open_file(fn, 'r')
+        #
+        fn = highway_skim_dir + 'bike_skim.omx'
+        skim_omxs['daily']['bike'] = omx.open_file(fn, 'r')
+        fn = highway_skim_dir + 'walk_skim.omx'
+        skim_omxs['daily']['walk'] = omx.open_file(fn, 'r')
+    # 
     def load_skims(self, skim_omxs):
         # stub for now
         pass
