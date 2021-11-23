@@ -1,5 +1,5 @@
 """
-modxlib - Python module implementing utilites used by CTPS Model Data Explorer.
+modxlib - Utilites used by the prototype CTPS Model Data Explorer for TDM19.
 
 The uilities fall into the following categories:
 0. Version identification
@@ -28,7 +28,7 @@ import pydash
 #
 # Section 0: Version identification
 #
-_version = "0.3.0"
+_version = "0.4.0"
 def get_version():
     return _version
 # end_def
@@ -40,31 +40,14 @@ def get_version():
 #
 class TripTableMgr():
     """ 
-    Abstract base class for TDM-version specific class for trip table utilities
-    """
-    tdm_version = ''
-    _all_time_periods = ['am', 'md', 'pm', 'nt']
-    def __init__(self, version_string):
-        self.tdm_version = version_string
-    #
-    def display_version(self):
-        print("TDM version = " + self.tdm_version)
-    #   
-# class TripTableMgr
-
-class TripTableMgr_TDM19(TripTableMgr):
-    """ 
-    Class for TDM19-specific class for trip table utilities
+    Class for trip table utilities for TDM19
     """
     _auto_modes = [ 'SOV', 'HOV' ]
     _truck_modes = [ 'Heavy_Truck', 'Heavy_Truck_HazMat', 'Medium_Truck', 'Medium_Truck_HazMat', 'Light_Truck' ]
     _nm_modes = [ 'Walk', 'Bike' ]
     _transit_modes = [ 'DAT_Boat', 'DET_Boat', 'DAT_CR', 'DET_CR', 'DAT_LB', 'DET_LB', 'DAT_RT', 'DET_RT', 'WAT' ]
     _all_modes = _auto_modes + _truck_modes + _nm_modes + _transit_modes
-    #
-    def __init__(self):
-        TripTableMgr.__init__(self, "tdm19")
-    #
+    
     def open_trip_tables(self, scenario_dir):
         """
         Function: open_trip_tables - TDM19 implementation
@@ -125,81 +108,7 @@ class TripTableMgr_TDM19(TripTableMgr):
         # end_for
         return retval
     #
-# class TripTableMgr_TDM19
-
-class TripTableMgr_TDM23(TripTableMgr):
-    """ 
-    Class for TDM23-specific class for trip table utilities
-    """
-    _veh_modes = [ 'sov', 'how', 'ltrk', 'mtrk', 'htrk' ]
-    _per_modes = [ 'auto', 'nonm', 'ta_acc', 'ta_egr', 'tw' ]
-    _all_modes = _veh_modes + _per_modes
-    def __init__(self):
-        TripTableMgr.__init__(self, "tdm23")
-    #
-    def open_trip_tables(self, scenario_dir):
-        """
-        Function: open_trip_tables - TDM23 implementation
-
-        Summary: Given a directory containing the trip tables in OMX format for the 
-                 four daily time periods used by the TDM23 model, open them and return 
-                 a dictionary with a two-level dictionary structure: the first level of which
-                 is { 'veh', 'per' }, and the second of which are the four time periods
-                {'am', 'md', 'pm', 'nt'}. The 'leaf' value of each element of this 2-level
-                dictionary is the corresponding open OMX file.
-
-        Args: scenario_dir: directory containing TDM23 output for a given scenario;
-              the OMX-format trip-tables are found in the '_summary' subdirectory
-
-        Returns: A two-level dictionary structure: the first level of which
-                 is { 'veh', 'per' }, and the second of which are the four time periods
-                {'am', 'md', 'pm', 'nt'}. The 'leaf' value of each element of this 2-level
-                dictionary is the corresponding open OMX file.
-                 
-        Raises: N/A
-        """
-        tt_dir = scenario_dir + '/_summary/'
-        tt_am_veh = tt_dir + 'od_veh_am.omx'
-        tt_am_per = tt_dir + 'od_per_am.omx'
-        tt_md_veh = tt_dir + 'od_veh_md.omx'
-        tt_md_per = tt_dir + 'od_per_md.omx'
-        tt_pm_veh = tt_dir + 'od_veh_pm.omx'
-        tt_pm_veh = tt_dir + 'od_per_pm.omx'
-        tt_nt_veh = tt_dir + 'od_veh_nt.omx'
-        tt_nt_per = tt_dir + 'od_per_nt.omx'
-        tt_omxs =   { 'am' : { 'veh' : omx.open_file(tt_am_veh,'r'),
-                               'per' : omx.open_file(tt_am_per,'r') },
-                      'md' : { 'veh' : omx.open_file(tt_md_veh,'r'),
-                               'per' : omx.open_file(tt_md_per,'r') },
-                      'pm' : { 'veh' : omx.open_file(tt_pm_veh,'r'),
-                               'per' : omx.open_file(tt_pm_per,'r') },
-                      'nt' : { 'veh' : omx.open_file(tt_nt_veh,'r'),
-                               'per' : omx.open_file(tt_nt_per,'r') }
-                    }
-        return tt_omxs
-    #
-    #
-    def load_trip_tables(tt_omxs, veh_modes=None, per_modes=None):
-        if veh_modes == None:
-            veh_modes = self._veh_modes
-        #
-        if per_modes == None:
-            per_modes = self._per_modes
-        #
-        retval  = { 'am' : {}, 'md' : {}, 'pm' : {}, 'nt' : {} }
-        for period in self._all_time_periods:
-            for mode in veh_modes:
-                temp = tt_omxs[period]['veh'][mode]
-                retval[period][mode] = np.array(temp)
-            # end_for
-            for mode in per_modes:
-                temp = tt_omxs[period]['per'][mode]
-                retval[period][mode] = np.array(temp)
-            # end_for
-        # end_for
-        return retval
-    #
-# class TripTableMgr_TDM23
+# class TripTableMgr
 
 
 ###############################################################################
@@ -377,16 +286,7 @@ class TazManager():
 #
 # Section 3: Miscellaneous utilities for the transit mode
 #
-# NOTE: Much of the contnets Section 3 is specific to TDM19, and should only be used with TDM19 data.
-#       The relevant TDM19-specific portions of Section 3 are clearly marked with the comment
-#          *** TDM19-specific code ***
-#       These will be changed to accord with how transit data is organized in TDM23, when this has 
-#       become sufficiently well-defined.
-#
-# -- B.K. 04 November 2021
 
-# *** TDM19-specific code ***
-#
 # NOTE: The mode-to-metamode mapping machinery is VERY specific to TDM19.
 #       It will problably NOT be required at all in TDM23.
 _mode_to_metamode_mapping_table = {
@@ -455,10 +355,8 @@ def mode_to_metamode(mode):
     # end_if
     return retval
 # mode_to_metamode()
-# *** END TDM19-specific code ***
 
-# The following function may be applicable to TDM23 as well as to TDM19.
-# This is currently to be determined.
+
 def calculate_total_daily_boardings(boardings_by_tod):
     """
     Function: calculate_total_daily_boardings
@@ -658,26 +556,12 @@ def import_transit_assignment(scenario):
 #
 # Section 4: Utilities for the highway mode
 #
+
+
 class HighwayAssignmentMgr():
     """ 
-    Abstract base class for TDM-version specific class for highway assingment utilities
+    Class for  highway assingment utilities
     """
-    tdm_version = ''
-    def __init__(self, version_string):
-        self.tdm_version = version_string
-    #
-    def display_version(self):
-        print("TDM version = " + self.tdm_version)
-    #   
-# class HighwayAssignmentMgr
-
-class HighwayAssignmentMgr_TDM19(HighwayAssignmentMgr):
-    """ 
-    Class for TDM19-specific class for highway assingment utilities
-    """
-    def __init__(self):
-        HighwayAssignmentMgr.__init__(self, "tdm19")
-    #
     def load_highway_assignment(self, scenario):
         """
             Method: load_highway_assignment(self, scenario)
@@ -726,58 +610,20 @@ class HighwayAssignmentMgr_TDM19(HighwayAssignmentMgr):
                  }
         return retval
     #
-# class HighwayAssignmentMgr_TDM19
-
-class HighwayAssignmentMgr_TDM23(HighwayAssignmentMgr):
-    """ 
-    Class for TDM23-specific class for highway assingment utilities
-    """
-    def __init__(self):
-        HighwayAssignmentMgr.__init__(self, "tdm23")
-    #
-    def load_highway_assignment(self, scenario):
-        # stub for now
-        pass
-    #
-# class HighwayAssignmentMgr_TDM23
+# class HighwayAssignmentMgr
 
 
 ###############################################################################
 #
 # Section 5: Utilities for working with "skims"
 #
+
 class SkimsMgr():
-    """
-    Abstract base class for TDM-version specific class for "skims" utilities
-    """
-    tdm_version = ''
-    def __init__(self, version_string):
-        self.tdm_version = version_string
-    #
-    def display_version(self):
-        print("TDM version = " + self.tdm_version)
+    def load_skims(self, scenario):
+        # stub for now
+        pass
     #
 # class SkimsMgr
-
-class SkimsMgr_TDM19(SkimsMgr):
-    def __init__(self):
-        SkimsMgr.__init__(self, "tdm19")
-    #
-    def load_skims(self, scenario):
-        # stub for now
-        pass
-    #
-# class SkimsMgr_TDM19
-
-class SkimsMgr_TDM23(SkimsMgr):
-    def __init__(self):
-        SkimsMgr.__init__(self, "tdm23")
-    #
-    def load_skims(self, scenario):
-        # stub for now
-        pass
-    #
-# class SkimsMgr_TDM23
 
 
 ###############################################################################
