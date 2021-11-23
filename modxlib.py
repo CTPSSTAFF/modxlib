@@ -603,9 +603,9 @@ class HighwayAssignmentMgr():
                             'truck': pd.read_csv(am_flow_truck_fn, delimiter=',') },
                    'md' : { 'auto' : pd.read_csv(md_flow_auto_fn, delimiter=','),
                             'truck': pd.read_csv(md_flow_truck_fn, delimiter=',') },
-                   'pm' : {  'auto' : pd.read_csv(pm_flow_auto_fn, delimiter=','),
+                   'pm' : { 'auto' : pd.read_csv(pm_flow_auto_fn, delimiter=','),
                             'truck': pd.read_csv(pm_flow_truck_fn, delimiter=',') },
-                   'nt' : {  'auto' : pd.read_csv(nt_flow_auto_fn, delimiter=','),
+                   'nt' : { 'auto' : pd.read_csv(nt_flow_auto_fn, delimiter=','),
                             'truck': pd.read_csv(nt_flow_truck_fn, delimiter=',') }
                  }
         return retval
@@ -617,13 +617,47 @@ class HighwayAssignmentMgr():
 #
 # Section 5: Utilities for working with "skims"
 #
-
-class SkimsMgr():
-    def load_skims(self, scenario):
+class SkimMgr():
+    def open_skims(self, scenario_dir):
+        skims_root_dir = scenario_dir + '/out/'
+        # Names of time-period-specific skims directories
+        skims_dirs = { 'am' : skims_root_dir + r'\Skims_Am_OMX',
+                       'md' : skims_root_dir + r'\Skims_Md_OMX',
+                       'pm' : skims_root_dir + r'\Skims_Pm_OMX',
+                       'nt' : skims_root_dir + r'\Skims_Nt_OMX'
+                     } 
+         # Skim OMX files - one set per time period
+        skim_components = { 'DAT_BT' : '_DAT_BT_Skim.omx', 
+                            'DAT_CR' : '_DAT_CR_Skim.omx', 
+                            'DAT_LB' : '_DAT_LB_Skim.omx', 
+                            'DAT_RT' : '_DAT_RT_Skim.omx', 
+                            'SOV'    : '_SOV_Skim.omx', 
+                            'WAT'    : '_WAT_Skim.omx'    
+                          } 
+        
+        tps = self._all_time_periods
+        # We will only work with the 'AM' skims, for starters.
+        #This is the only sample data we have so far.
+        tps = [ 'am' ]
+        
+        # Return value: data structure in which we will store the opened skim OMXs
+        skim_omxs = { 'am' : {}, 'md' : {}, 'pm' : {}, 'nt' : {} }
+        for tp in tps:
+            for sc in skim_components.keys():
+                tp_upper = tp.upper()
+                fn = skims_dirs[tp] + '\\' + tp_upper + skim_components[sc]
+                # temp = omx.open_file(fn, 'r')
+                skim_omxs[tp][sc] = omx.open_file(fn, 'r')
+            # end_for
+        # end_for
+        return skim_omxs
+    # end_def open_skims()
+    #
+    def load_skims(self, skim_omxs):
         # stub for now
         pass
     #
-# class SkimsMgr
+# class SkimMgr_TDM19
 
 
 ###############################################################################
